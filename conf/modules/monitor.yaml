@@ -1,0 +1,30 @@
+---
+
+module:
+  name: monitor
+  version: 1.0
+  args:
+  - name: freq
+    type: string
+    default: 3
+    describe: 监控频率参数
+  - name: jobid
+    type: string
+    default: ""
+    describe: job id
+  - name: type
+    type: string
+    default: all
+    describe:
+  - name: auto
+    type: boolean
+    default: false
+    describe: 自动采集开关,建议默认值为false
+  - name: collector
+    type: boolean
+    default: false
+    describe: 部署采集器开关，建议默认值为false
+  - name: cpath
+    type: string
+    default: /tmp/ump/collector
+    describe: 收集工具的觉得路径

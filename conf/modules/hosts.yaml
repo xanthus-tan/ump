@@ -1,0 +1,18 @@
+---
+
+module:
+  name: hosts
+  version: 1.0
+  args:
+  - name: user
+    type: string
+    default:
+    describe: host username
+  - name: password
+    type: string
+    default:
+    describe: host password
+  - name: address
+    type: string
+    default:
+    describe: host address

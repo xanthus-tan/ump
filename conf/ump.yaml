@@ -1,0 +1,31 @@
+---
+ump:
+  server:
+    # ump监听端口
+    port: 3003
+    pid:
+      # pid文件默认路径 $UMP_HOME/ump.pid
+      path: ump.pid
+    logs:
+      # 日志级别 info, debug, warn, error
+      level: info
+      # 日志输出目标 console, file
+      # 如果是 file，path参数不生效
+      handler: file
+      # 日志文件默认路径 $UMP_HOME/logs/ump.log
+      path: logs/ump.log
+  ssh:
+    # ssh连接超时时间
+    timeout: 2
+  registry:
+    # 登记中心默认路径 $UMP_HOME/registry
+    path: registry
+    # 登记中心服务端口
+    port: 3002
+    # 监听地址
+    bind: 0.0.0.0
+    # 单个文件上传限制 单位:MB
+    file_size_limit: 500
+  addons:
+    # 附加程序默认路径 $UMP_HOME/addons
+    path: addons

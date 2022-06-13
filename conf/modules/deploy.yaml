@@ -1,0 +1,22 @@
+---
+
+module:
+  name: deploy
+  version: 1.0
+  args:
+  - name: app
+    type: string
+    default:
+    describe: 部署应用名称
+  - name: dest
+    type: string
+    default:
+    describe: 部署目标
+  - name: history
+    type: boolean
+    default: false
+    describe: 查看历史信息参数
+  - name: detail
+    type: boolean
+    default: false
+    describe: 查看细节信息参数

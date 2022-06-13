@@ -1,0 +1,27 @@
+---
+
+module:
+  name: release
+  version: 1.0
+  args:
+  - name: tag
+    require: true
+    type: string
+    default: latest
+    describe:
+  - name: filename
+    type: string
+    default: ""
+    describe: 文件发布后的名称
+  - name: size
+    type: int
+    default: 0
+    describe: 文件大小
+  - name: originName
+    type: string
+    default: ""
+    describe: 原始文件名称
+  - name: originSuffix
+    type: string
+    default: ""
+    describe: 原始文件类型

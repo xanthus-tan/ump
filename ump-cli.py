@@ -15,16 +15,16 @@ monitor模块
   ump-cli.py --module monitor --action set --group g1 --auto true --freq 5 --cpath /home/xanthus/ump/collector
   ump-cli.py --module monitor --action delete --jobid 5060cdf69b5f11ecb154a6fc7733a40b
 release模块
-  ump-cli.py --module release --action set --name xx --tag 1.0 --src abcd/faf
-  ump-cli.py --module release --action get --name xx
-  ump-cli.py --module release --action delete --name xx --tag 1.0
+  ump-cli.py --module release --action set --name demo-app --tag 1.0 --src d:\demo-app.jar
+  ump-cli.py --module release --action get --name demo-app
+  ump-cli.py --module release --action delete --name demo-app --tag 1.0
 deploy模块
-  ump-cli.py --module deploy --action set --group g1 --name appDeploy --app test:1.0 --dest /home/xanthus/ump/
-  ump-cli.py --module deploy --action get --name appDeploy
-  ump-cli.py --module deploy --action get --name appDeploy --detail true
-  ump-cli.py --module deploy --action get --name appDeploy --history true
-  ump-cli.py --module deploy --action delete --name app1
-  ump-cli.py --module deploy --action delete --name app1 --history true
+  ump-cli.py --module deploy --action set --group g1 --name demo-deploy --app demo-app:1.0 --dest /tmp/
+  ump-cli.py --module deploy --action get --name demo-deploy
+  ump-cli.py --module deploy --action get --name demo-deploy --detail true
+  ump-cli.py --module deploy --action get --name demo-deploy --history true
+  ump-cli.py --module deploy --action delete --name demo-deploy
+  ump-cli.py --module deploy --action delete --name demo-deploy --history true
 """
 import json
 import optparse

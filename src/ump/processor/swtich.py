@@ -31,6 +31,7 @@ class InstructionHandler:
         try:
             my_handler = getattr(
                 __import__("src.ump.modules.{0}".format(module_name), fromlist=[module_class]), module_class)
+            print(my_handler)
             module = my_handler()
             res = module.execute(attr, self.config)
             message["module"] = res.get_response()
@@ -39,6 +40,8 @@ class InstructionHandler:
         except ModuleNotFoundError as error:
             logger.error("module error")
             logger.error(error)
+            message["module"] = {"display": [{"Error": str(error)}]}
+            return message
         except SyntaxError as error:
             logger.error(error)
             logger.error("missing key word of action")

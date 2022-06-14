@@ -4,13 +4,13 @@ import os
 
 from sqlalchemy import select, insert, update, delete
 
-from exector.remote import Connector, RemoteHandler
-from modules.deploy.model import UmpDeployInfo, UmpDeployDetailInfo
-from msg import SUCCESS, FAILED, WARN
+from src.ump.exector.remote import Connector, RemoteHandler
+from src.ump.modules.deploy.model import UmpDeployInfo, UmpDeployDetailInfo
+from src.ump.msg import SUCCESS, FAILED, WARN
 from src.ump.metadata.meta import ReleaseMeta
 from src.ump.modules import ActionBase
 from src.ump.utils.logger import logger
-from utils.dbutils import DB
+from src.ump.utils.dbutils import DB
 
 CURRENT = "current"
 COMPLETED = "completed"
@@ -93,7 +93,7 @@ class Action(ActionBase):
         db = DB()
         conn = db.get_connect()
         # 获取当前部署状态
-        s = select(UmpDeployInfo).\
+        s = select(UmpDeployInfo). \
             where(UmpDeployInfo.deploy_status == CURRENT,
                   UmpDeployInfo.deploy_name == self.name)
         rs = conn.execute(s).fetchone()
@@ -124,8 +124,8 @@ class Action(ActionBase):
         # 开启事务
         with conn.begin():
             # 将当前部署状态归档
-            s1 = update(UmpDeployInfo).\
-                where(UmpDeployInfo.id == deploy_app_id_last).\
+            s1 = update(UmpDeployInfo). \
+                where(UmpDeployInfo.id == deploy_app_id_last). \
                 values({"deploy_status": COMPLETED})
             conn.execute(s1)
             deploy_info = {
@@ -183,7 +183,7 @@ class Action(ActionBase):
             return WARN
         db = DB()
         conn = db.get_connect()
-        s = select(UmpDeployInfo).\
+        s = select(UmpDeployInfo). \
             where(UmpDeployInfo.deploy_status == CURRENT,
                   UmpDeployInfo.deploy_name == self.name)
         rs = conn.execute(s).fetchone()
@@ -192,7 +192,7 @@ class Action(ActionBase):
             return WARN
         with conn.begin():
             if instruction["history"]:
-                s1 = delete(UmpDeployInfo).\
+                s1 = delete(UmpDeployInfo). \
                     where(UmpDeployInfo.deploy_name == deploy_name,
                           UmpDeployInfo.deploy_status == COMPLETED)
             else:
@@ -205,6 +205,3 @@ class Action(ActionBase):
         conn.close()
         self.response.set_display([{"Info": deploy_name + " has been deleted"}])
         return SUCCESS
-
-
-

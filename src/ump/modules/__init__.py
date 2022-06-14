@@ -1,7 +1,7 @@
 # (c) 2021, xanthus tan <tanxk@neusoft.com>
 
 from abc import abstractmethod, ABC
-
+from src.ump.utils.logger import logger
 from src.ump.msg.module import Response
 
 
@@ -21,6 +21,7 @@ class ActionBase(ABC):
     def execute(self, arg, config) -> Response:
         # debug信息
         # 显示模块接收到的参数
+        logger.debug(arg)
         print(arg)
         self.instruction = arg["instruction"]
         self.action = arg["action"]

@@ -1,8 +1,8 @@
 # (c) 2021, xanthus tan <tanxk@neusoft.com>
 from sqlalchemy import select
 
-from modules.release import UmpReleaseInfo
-from utils.dbutils import DB
+from src.ump.modules.release import UmpReleaseInfo
+from src.ump.utils.dbutils import DB
 
 
 class ReleaseMetaInstance:

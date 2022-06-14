@@ -9,6 +9,7 @@ config_path = os.path.join(ump_home, "conf")
 hosts_file = os.path.join(config_path, "hosts")
 datafile = os.path.join(config_path, "ump.db")
 module_path = os.path.join(config_path, "modules")
+
 CONFIG_FILE = "ump.yaml"
 
 

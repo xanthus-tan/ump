@@ -27,8 +27,29 @@ class UMPConfig:
     def get_registry_size_limit(self):
         return int(self.ump["registry"]["file_size_limit"])
 
-    def get_addons_path(self):
-        return os.path.join(ump_home, self.ump["addons"]["path"])
+    def get_collector_path(self):
+        return os.path.join(ump_home, self.ump["monitor"]["tool"]["path"])
+
+    def get_metrics_to_file_enable_status(self):
+        return str(self.ump["monitor"]["persistence"]["file"]["enable"])
+
+    def get_metrics_to_file_path(self):
+        return os.path.join(ump_home, self.ump["monitor"]["persistence"]["file"]["path"])
+
+    def get_metrics_to_es_enable_status(self):
+        return str(self.ump["monitor"]["persistence"]["elasticsearch"]["enable"])
+
+    def get_metrics_to_es_url(self):
+        return self.ump["monitor"]["persistence"]["elasticsearch"]["url"]
+
+    def get_metrics_to_es_username(self):
+        return self.ump["monitor"]["persistence"]["elasticsearch"]["username"]
+
+    def get_metrics_to_es_password(self):
+        return self.ump["monitor"]["persistence"]["elasticsearch"]["password"]
+
+    def get_metrics_to_es_cert_path(self):
+        return os.path.join(ump_home, self.ump["monitor"]["persistence"]["elasticsearch"]["cert"])
 
     def get_ssh_timeout(self):
         return int(self.ump["ssh"]["timeout"])

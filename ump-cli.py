@@ -11,8 +11,8 @@ monitor模块
   ump-cli.py --module monitor --action get --group g1 --cpath /home/xanthus/collector --type metrics
   ump-cli.py --module monitor --action set --group g1 --collector true
   ump-cli.py --module monitor --action set --group g1 --collector true --cpath /home/xanthus/ump/collector
-  ump-cli.py --module monitor --action set --group g1 --auto true --freq 3
-  ump-cli.py --module monitor --action set --group g1 --auto true --freq 3 --cpath /home/xanthus/ump/collector
+  ump-cli.py --module monitor --action set --group g1 --auto true --freq 5
+  ump-cli.py --module monitor --action set --group g1 --auto true --freq 5 --cpath /home/xanthus/ump/collector
   ump-cli.py --module monitor --action delete --jobid 5060cdf69b5f11ecb154a6fc7733a40b
 release模块
   ump-cli.py --module release --action set --name xx --tag 1.0 --src abcd/faf
@@ -29,12 +29,12 @@ deploy模块
 import json
 import optparse
 import os
-###############################################################
 import socket
-
 import requests
 from prettytable import PrettyTable
-
+# *******************版本*******************
+UMP_CLI_VERSION = "1.1"
+# *****************************************
 HOST = socket.gethostname()
 BUFFER_SIZE = 1024 * 8
 REGISTRY_URL = "http://127.0.0.1:3002/registry/push"

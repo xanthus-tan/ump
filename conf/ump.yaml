@@ -11,7 +11,7 @@ ump:
       level: info
       # 日志输出目标 console, file
       # 如果是 file，path参数不生效
-      handler: file
+      handler: console
       # 日志文件默认路径 $UMP_HOME/logs/ump.log
       path: logs/ump.log
   ssh:
@@ -26,6 +26,19 @@ ump:
     bind: 0.0.0.0
     # 单个文件上传限制 单位:MB
     file_size_limit: 500
-  addons:
-    # 附加程序默认路径 $UMP_HOME/addons
-    path: addons
+  monitor:
+    tool:
+      # 附加程序默认路径 $UMP_HOME/addons
+      path: addons/collector
+    persistence:
+      # 类型可以是file或者elasticsearch，
+      # 如果 file类型为true，自动屏蔽es
+      file:
+        enable: false
+        path: logs/metrics.log
+      elasticsearch:
+        enable: true
+        url: https://localhost:9200
+        username: elastic
+        password: elastic
+        cert: conf/http_ca.crt

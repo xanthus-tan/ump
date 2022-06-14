@@ -6,7 +6,7 @@ import os
 from src.ump.exector.remote import Connector, RemoteHandler
 from src.ump.exector.scheduler import Job
 from src.ump.modules import ActionBase
-from src.ump.modules.monitor.persistence import Metrics
+from src.ump.modules.monitor.persistence import MetricsToES, MetricsToFile, MetricsDestinationInfo
 from src.ump.msg import SUCCESS, FAILED, WARN
 from src.ump.utils import get_unique_id, current_time_str
 from src.ump.utils.logger import logger
@@ -57,7 +57,7 @@ class Action(ActionBase):
 
     def set(self, instruction):
         if instruction["collector"]:
-            locale_collector = os.path.join(self.config.get_addons_path(), "collector")
+            locale_collector = self.config.get_collector_path()
             cpath = instruction["cpath"]
             c1 = Connector()
             ssh_pool = c1.get_ssh_pool(self.group)
@@ -67,20 +67,36 @@ class Action(ActionBase):
             c1.close_ssh_connect()
             c2 = Connector()
             ssh_pool = c2.get_ssh_pool(self.group)
-            # 写的不好，但数据量少影响不大
+            # 简单写法，数据量少性能不会有太大影响
             for s in ssh_pool:
                 for h in fh:
                     if s.get_address() == h:
                         ssh_pool.remove(s)
             handler.remote_copy(ssh_pool, locale_collector, cpath)
             handler.remote_shell(ssh_pool, "chmod +x " + cpath)
-            self.response.set_display([{"Deploy collector tool to node":
+            self.response.set_display([{"The collector tool deploy to node":
                                         "success: " + str(len(sh)) +
                                         "\n" +
                                         "failed: " + str(len(fh))}])
             c2.close_ssh_connect()
             return SUCCESS
         if instruction["auto"]:
+            file_status = self.config.get_metrics_to_file_enable_status()
+            es_status = self.config.get_metrics_to_es_enable_status()
+            obj = None
+            if file_status.lower() == "true":
+                des = MetricsDestinationInfo(log_path=self.config.get_metrics_to_file_path())
+                obj = MetricsToFile(des)
+            elif es_status.lower() == "true":
+                des = MetricsDestinationInfo(es_username=self.config.get_metrics_to_es_username(),
+                                             es_pwd=self.config.get_metrics_to_es_password(),
+                                             es_url=self.config.get_metrics_to_es_url(),
+                                             es_cert=self.config.get_metrics_to_es_cert_path())
+                obj = MetricsToES(des)
+            else:
+                display = [{"Error": "metrics not destination, file or es?"}]
+                self.response.set_display(display)
+                return FAILED
             c3 = Connector()
             ssh_pool = c3.get_ssh_pool(self.group)
             job = Job()
@@ -88,7 +104,7 @@ class Action(ActionBase):
             interval = instruction["freq"]
             job.set_job_interval(int(interval))
             job.set_job_id(job_id)
-            job.set_job_func(metrics_to_log, args=[ssh_pool, instruction["cpath"], self.config.get_ssh_timeout()])
+            job.set_job_func(metrics_to_log, args=[obj, ssh_pool, instruction["cpath"], self.config.get_ssh_timeout()])
             job.job_start()
             m = copy.deepcopy(monitor_status)
             m["id"] = job_id
@@ -105,7 +121,6 @@ class Action(ActionBase):
     def delete(self, instruction):
         job = Job()
         job_id = instruction["jobid"]
-
         if job_id:
             job.job_stop(job_id)
             remove_monitor(job_id)
@@ -128,11 +143,10 @@ class Action(ActionBase):
         return WARN
 
 
-def metrics_to_log(ssh, collector_path, timeout):
+def metrics_to_log(destination, ssh, collector_path, timeout):
     handler = RemoteHandler(timeout)
     metrics_list, f = handler.remote_shell(ssh, collector_path)
-    m = Metrics()
-    m.to_log(metrics_list)
+    destination.write(metrics_list)
 
 
 # 通过组名称获取job id

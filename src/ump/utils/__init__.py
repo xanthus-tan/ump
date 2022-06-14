@@ -16,6 +16,11 @@ def current_time_str():
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
 
+# 获取当前日期str类型
+def current_date_str():
+    return time.strftime("%Y%m%d", time.localtime())
+
+
 # 获取UUID
 def get_unique_id():
     uuid_value = uuid.uuid1()

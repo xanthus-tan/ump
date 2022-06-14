@@ -9,7 +9,7 @@ from src.ump.metadata.config import UMPConfig
 from src.ump.server.server import ServerCLI, ServerRegistry
 from src.ump.utils.logger import logger
 
-VERSION = "UMP 1.1"
+VERSION = "UMP 1.2"
 if __name__ == '__main__':
     cmd = ""
     try:

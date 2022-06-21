@@ -1,5 +1,4 @@
 ---
-
 module:
   name: hosts
   version: 1.0

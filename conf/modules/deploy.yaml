@@ -1,5 +1,4 @@
 ---
-
 module:
   name: deploy
   version: 1.0

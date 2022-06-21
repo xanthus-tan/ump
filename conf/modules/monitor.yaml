@@ -1,5 +1,4 @@
 ---
-
 module:
   name: monitor
   version: 1.0

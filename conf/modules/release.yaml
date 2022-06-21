@@ -1,5 +1,4 @@
 ---
-
 module:
   name: release
   version: 1.0

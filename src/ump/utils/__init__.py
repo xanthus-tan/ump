@@ -11,6 +11,10 @@ def get_current_local_datetime():
     return datetime.strptime(t, "%Y-%m-%d %H:%M:%S")
 
 
+def get_current_utc_datetime():
+    t = time.strftime("%Y-%m-%d %H:%M:%S", datetime.now())
+    return datetime.strptime(t, "%Y-%m-%d %H:%M:%S")
+
 # 获取当前时间str类型
 def current_time_str():
     return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())

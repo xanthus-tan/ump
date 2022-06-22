@@ -12,7 +12,7 @@ client_prompt = {
     401: "UMP Waring: The client could not match in current ump version. please update your client !",
     # 错误信息
     500: "UMP Error: not found such module",
-    501: "UMP Error: missing key word of action"
+    501: "UMP Error: missing key of action"
 }
 
 # 客户端接收到的信息体

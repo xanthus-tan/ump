@@ -14,10 +14,12 @@ class InstructionHandler:
 
     def run(self, cmd, translate):
         json = translate.to_json(cmd)
+        logger.debug("request json is {}".format(json))
         msg = self._parser(json)
+        logger.debug("response json is {}".format(msg))
         return msg
 
-    # 解析指令
+    # 解析并且执行指令
     def _parser(self, json):
         fil = InstructionFilter()
         status_code, attr = fil.extract_instruction(json)

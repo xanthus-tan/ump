@@ -4,7 +4,7 @@
 cli example
 hosts模块
   ump-cli.py --module hosts --action get --group g1
-  ump-cli.py --module hosts --action set --group g1 --address 192.168.72.130,192.168.72.132--user xanthus --password 1
+  ump-cli.py --module hosts --action set --group g1 --address 192.168.72.130,192.168.72.132 --user xanthus --password 1
 monitor模块
   ump-cli.py --module monitor --action get --group g1 --type status
   ump-cli.py --module monitor --action get --group g1 --type metrics
@@ -16,6 +16,8 @@ monitor模块
   ump-cli.py --module monitor --action delete --jobid 5060cdf69b5f11ecb154a6fc7733a40b
 release模块
   ump-cli.py --module release --action set --name demo-app --tag 1.0 --src d:\demo-app.jar
+  # 查询全部部署
+  ump-cli.py --module release --action get
   ump-cli.py --module release --action get --name demo-app
   ump-cli.py --module release --action delete --name demo-app --tag 1.0
 deploy模块

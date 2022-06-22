@@ -5,7 +5,7 @@ from sqlalchemy.sql import select, delete, insert
 
 from src.ump.modules import ActionBase
 from src.ump.modules.hosts.model import UmpHostsInfo, HOST_ONLINE
-from src.ump.msg import SUCCESS
+from src.ump.msg import SUCCESS, WARN
 from src.ump.utils.dbutils import DB
 
 
@@ -59,11 +59,13 @@ class Action(ActionBase):
         conn = self.conn.get_connect()
         addr = instruction["address"]
         ip_reg = "(([01]{0,1}\\d{0,1}\\d|2[0-4]\\d|25[0-5])\\.){3}([01]{0,1}\\d{0,1}\\d|2[0-4]\\d|25[0-5])"
-        is_ip = re.match(ip_reg, addr)
-        if is_ip:
+        if addr is None:
+            s = delete(UmpHostsInfo).where(UmpHostsInfo.group_id == group_name)
+        elif re.match(ip_reg, addr):
             s = delete(UmpHostsInfo).where(UmpHostsInfo.address == addr)
         else:
-            s = delete(UmpHostsInfo).where(UmpHostsInfo.group_id == group_name)
+            self.response.set_display([{"Info": "not found host or group"}])
+            return WARN
         r = conn.execute(s)
         conn.close()
         display = [{"Info": "delete rows " + str(r.rowcount)}]

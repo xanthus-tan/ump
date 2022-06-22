@@ -8,7 +8,7 @@ ump:
       path: ump.pid
     logs:
       # 日志级别 info, debug, warn, error
-      level: info
+      level: debug
       # 日志输出目标 console, file
       # 如果是 file，path参数不生效
       handler: console
@@ -38,7 +38,10 @@ ump:
         path: logs/metrics.log
       elasticsearch:
         enable: true
-        url: https://localhost:9200
-        username: elastic
-        password: elastic
-        cert: conf/http_ca.crt
+        url: http://192.168.178.247:9200
+       # username: elastic
+       # password: elastic
+       # cert: conf/http_ca.crt
+        username:
+        password:
+        cert:

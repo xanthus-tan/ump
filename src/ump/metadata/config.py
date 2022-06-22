@@ -40,16 +40,28 @@ class UMPConfig:
         return str(self.ump["monitor"]["persistence"]["elasticsearch"]["enable"])
 
     def get_metrics_to_es_url(self):
-        return self.ump["monitor"]["persistence"]["elasticsearch"]["url"]
+        es_url = self.ump["monitor"]["persistence"]["elasticsearch"]["url"]
+        if es_url is None:
+            es_url = ""
+        return es_url
 
     def get_metrics_to_es_username(self):
-        return self.ump["monitor"]["persistence"]["elasticsearch"]["username"]
+        es_username = self.ump["monitor"]["persistence"]["elasticsearch"]["username"]
+        if es_username is None:
+            es_username = ""
+        return es_username
 
     def get_metrics_to_es_password(self):
-        return self.ump["monitor"]["persistence"]["elasticsearch"]["password"]
+        es_pwd = self.ump["monitor"]["persistence"]["elasticsearch"]["password"]
+        if es_pwd is None:
+            es_pwd = ""
+        return es_pwd
 
     def get_metrics_to_es_cert_path(self):
-        return os.path.join(ump_home, self.ump["monitor"]["persistence"]["elasticsearch"]["cert"])
+        cert_path = self.ump["monitor"]["persistence"]["elasticsearch"]["cert"]
+        if cert_path is None:
+            cert_path = ""
+        return os.path.join(ump_home, cert_path)
 
     def get_ssh_timeout(self):
         return int(self.ump["ssh"]["timeout"])

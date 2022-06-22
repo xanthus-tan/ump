@@ -185,6 +185,7 @@ def display_metrics(metrics, failed_hosts):
             out = m["out"]
             print(out)
             host_metrics = json.loads(out)
+            print(host_metrics)
         except json.decoder.JSONDecodeError as error:
             logger.error("to json info error, from monitor module")
             logger.error("json error" + str(error))

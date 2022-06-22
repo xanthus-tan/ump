@@ -1,6 +1,7 @@
 # (c) 2021, xanthus tan <tanxk@neusoft.com>
 import apscheduler
 from apscheduler.schedulers.background import BackgroundScheduler
+from src.ump.utils.logger import logger
 
 scheduler = BackgroundScheduler()
 
@@ -32,7 +33,7 @@ class Job:
         try:
             scheduler.remove_job(job_id=job_id)
         except apscheduler.jobstores.base.JobLookupError:
-            logger.error("No job by the id of 123 was found")
+            logger.error("not found " + job_id + " in job")
         scheduler.print_jobs()
 
 

@@ -3,7 +3,6 @@ import os
 import shutil
 from src.ump.modules.release.meta import ReleaseService
 from src.ump.modules import ActionBase
-from src.ump.modules.release.model import UmpReleaseInfo
 from src.ump.msg import SUCCESS, FAILED, WARN
 from src.ump.utils import get_unique_id
 from src.ump.utils.logger import logger

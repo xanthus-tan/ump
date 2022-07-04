@@ -3,7 +3,7 @@ import sqlalchemy
 from sqlalchemy import select, insert, delete
 
 from src.ump.msg import FAILED
-from src.ump.modules.release import UmpReleaseInfo
+from src.ump.modules.release.model import UmpReleaseInfo
 from src.ump.utils.dbutils import DB
 from src.ump.utils.logger import logger
 

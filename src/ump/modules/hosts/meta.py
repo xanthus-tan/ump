@@ -80,10 +80,9 @@ class HostService:
             v = {"address": ip, "port": port, "group_id": group_name,
                  "login_username": user, "login_password": password}
             insert_values.append(v)
-        conn = self.conn.get_connect()
         s = insert(UmpHostsInfo).values(insert_values)
         try:
-            r = conn.execute(s)
+            r = self.conn.execute(s)
             update_count = r.rowcount
         except sqlalchemy.exc.IntegrityError as error:
             logger.error(error)

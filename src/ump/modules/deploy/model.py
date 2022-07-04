@@ -20,7 +20,7 @@ class UmpDeployInfo(Base):
     deploy_app_last = Column(String(40))
     deploy_group = Column(String(20))
     deploy_host_num = Column(Integer)
-    deploy_failed_num = Column(Integer)
+    deploy_failure_num = Column(Integer)
     deploy_comment = Column(String(100))
     deploy_status = Column(String(20), default="current")
     deploy_time = Column(DateTime, default=get_current_local_datetime)

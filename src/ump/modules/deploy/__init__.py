@@ -1,10 +1,6 @@
 # (c) 2021, xanthus tan <tanxk@neusoft.com>
 
 import os
-
-from sqlalchemy import select, insert, update, delete
-
-
 from src.ump.modules.deploy.meta import DeployService
 from src.ump.exector.scheduler import JobDBService
 from src.ump.metadata import LINUX_SEP
@@ -23,44 +19,16 @@ class Action(ActionBase):
         if deploy_name == "":
             self.response.set_display([{"Error": "name value is missing!"}])
             return WARN
-        # db = DB()
-        # conn = db.get_connect()
-        # rows = []
-        # if instruction["detail"]:
-        #     detail = select(UmpDeployDetailInfo).where(UmpDeployDetailInfo.deploy_name == deploy_name)
-        #     rs = conn.execute(detail)
-        #     for r in rs:
-        #         row = {
-        #             "deploy_name": r.deploy_name,
-        #             "deploy_host": r.deploy_host,
-        #             "deploy_status": r.deploy_status,
-        #             "deploy_date": r.deploy_time.strftime("%Y-%m-%d %H:%M:%S")
-        #         }
-        #         rows.append(row)
-        #     self.response.set_display(rows)
-        #     conn.close()
-        #     return SUCCESS
-        # if instruction["history"]:
-        #     s = select(UmpDeployInfo).where(UmpDeployInfo.deploy_name == deploy_name)
-        # else:
-        #     s = select(UmpDeployInfo).where(UmpDeployInfo.deploy_status == CURRENT,
-        #                                     UmpDeployInfo.deploy_name == deploy_name)
-        # rs = conn.execute(s)
-        # for r in rs:
-        #     row = {
-        #         "deploy_name": r.deploy_name,
-        #         "deploy_path": r.deploy_path,
-        #         "deploy_app": r.deploy_app,
-        #         "deploy_app_last": r.deploy_app_last,
-        #         "deploy_group": r.deploy_group,
-        #         "host_num": r.deploy_host_num,
-        #         "failed_num": r.deploy_failed_num,
-        #         "deploy_status": r.deploy_status,
-        #         "deploy_date": r.deploy_time.strftime("%Y-%m-%d %H:%M:%S")
-        #     }
-        #     rows.append(row)
-        # self.response.set_display(rows)
-        # conn.close()
+        deploy_service = DeployService()
+        if instruction["detail"]:
+            instance_info_rows = deploy_service.get_deploy_instance_info(deploy_name)
+            self.response.set_display(instance_info_rows)
+            return SUCCESS
+        history = instruction["history"]
+        deploy_service = DeployService()
+        rows = deploy_service.get_deploy_info(deploy_name, history=history)
+        self.response.set_display(rows)
+        deploy_service.close_db_connection()
         return SUCCESS
 
     def set(self, instruction):
@@ -90,7 +58,7 @@ class Action(ActionBase):
         prev_deploy_id = ""
         deploy_service = DeployService()
         # 获取当前部署状态
-        deploy_info = deploy_service.get_current_deploy_info(deploy_name)
+        deploy_info = deploy_service.get_current_deploy_id_and_app(deploy_name)
         if deploy_info is not None:
             prev_deploy_app = deploy_info["deploy_app"]
             prev_deploy_id = deploy_info["deploy_id"]
@@ -145,31 +113,15 @@ class Action(ActionBase):
         return SUCCESS
 
     def delete(self, instruction):
-        # deploy_name = self.name
-        # if deploy_name == "":
-        #     self.response.set_display([{"Warning": "name value is missing!"}])
-        #     return WARN
-        # db = DB()
-        # conn = db.get_connect()
-        # s = select(UmpDeployInfo). \
-        #     where(UmpDeployInfo.deploy_status == CURRENT,
-        #           UmpDeployInfo.deploy_name == self.name)
-        # rs = conn.execute(s).fetchone()
-        # if rs is None:
-        #     self.response.set_display([{"Warning": "Not found " + deploy_name}])
-        #     return WARN
-        # with conn.begin():
-        #     if instruction["history"]:
-        #         s1 = delete(UmpDeployInfo). \
-        #             where(UmpDeployInfo.deploy_name == deploy_name,
-        #                   UmpDeployInfo.deploy_status == COMPLETED)
-        #     else:
-        #         s1 = delete(UmpDeployInfo).where(UmpDeployInfo.deploy_name == deploy_name)
-        #
-        #     s2 = delete(UmpDeployDetailInfo).where(UmpDeployDetailInfo.deploy_name == deploy_name)
-        #     c1 = conn.execute(s1)
-        #     print(c1.rowcount)
-        #     c2 = conn.execute(s2)
-        # conn.close()
-        # self.response.set_display([{"Info": deploy_name + " has been deleted"}])
+        deploy_name = self.name
+        if deploy_name == "":
+            self.response.set_display([{"Warn": "name value is missing!"}])
+            return WARN
+        deploy_service = DeployService()
+        result = deploy_service.delete_deploy(deploy_name)
+        if result is None:
+            self.response.set_display([{"Warn": "Not found " + deploy_name}])
+            return WARN
+        deploy_service.close_db_connection()
+        self.response.set_display([{"Info": deploy_name + " has been deleted"}])
         return SUCCESS

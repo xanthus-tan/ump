@@ -39,10 +39,13 @@ class InstructionHandler:
             message["module"] = res.get_response()
         except OperationalError as error:
             logger.error(error)
+            message["code"] = 500
         except ModuleNotFoundError as error:
             logger.error("module error")
             logger.error(error)
             message["module"] = {"display": [{"Error": str(error)}]}
+            message["code"] = 500
+            message["msg"] = client_prompt[500]
             return message
         except SyntaxError as error:
             logger.error(error)

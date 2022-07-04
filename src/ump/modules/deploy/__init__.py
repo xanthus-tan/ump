@@ -4,16 +4,16 @@ import os
 
 from sqlalchemy import select, insert, update, delete
 
+
+from src.ump.modules.deploy.meta import DeployService
+from src.ump.exector.scheduler import JobDBService
+from src.ump.metadata import LINUX_SEP
 from src.ump.exector.remote import Connector, RemoteHandler
-from src.ump.modules.deploy.model import UmpDeployInfo, UmpDeployDetailInfo
 from src.ump.msg import SUCCESS, FAILED, WARN
-from src.ump.metadata.meta import ReleaseMeta
+# fix Circular Import Error
+import src.ump.metadata.module as module
 from src.ump.modules import ActionBase
 from src.ump.utils.logger import logger
-from src.ump.utils.dbutils import DB
-
-CURRENT = "current"
-COMPLETED = "completed"
 
 
 # deploy模块具体实现
@@ -23,44 +23,44 @@ class Action(ActionBase):
         if deploy_name == "":
             self.response.set_display([{"Error": "name value is missing!"}])
             return WARN
-        db = DB()
-        conn = db.get_connect()
-        rows = []
-        if instruction["detail"]:
-            detail = select(UmpDeployDetailInfo).where(UmpDeployDetailInfo.deploy_name == deploy_name)
-            rs = conn.execute(detail)
-            for r in rs:
-                row = {
-                    "deploy_name": r.deploy_name,
-                    "deploy_host": r.deploy_host,
-                    "deploy_status": r.deploy_status,
-                    "deploy_date": r.deploy_time.strftime("%Y-%m-%d %H:%M:%S")
-                }
-                rows.append(row)
-            self.response.set_display(rows)
-            conn.close()
-            return SUCCESS
-        if instruction["history"]:
-            s = select(UmpDeployInfo).where(UmpDeployInfo.deploy_name == deploy_name)
-        else:
-            s = select(UmpDeployInfo).where(UmpDeployInfo.deploy_status == CURRENT,
-                                            UmpDeployInfo.deploy_name == deploy_name)
-        rs = conn.execute(s)
-        for r in rs:
-            row = {
-                "deploy_name": r.deploy_name,
-                "deploy_path": r.deploy_path,
-                "deploy_app": r.deploy_app,
-                "deploy_app_last": r.deploy_app_last,
-                "deploy_group": r.deploy_group,
-                "host_num": r.deploy_host_num,
-                "failed_num": r.deploy_failed_num,
-                "deploy_status": r.deploy_status,
-                "deploy_date": r.deploy_time.strftime("%Y-%m-%d %H:%M:%S")
-            }
-            rows.append(row)
-        self.response.set_display(rows)
-        conn.close()
+        # db = DB()
+        # conn = db.get_connect()
+        # rows = []
+        # if instruction["detail"]:
+        #     detail = select(UmpDeployDetailInfo).where(UmpDeployDetailInfo.deploy_name == deploy_name)
+        #     rs = conn.execute(detail)
+        #     for r in rs:
+        #         row = {
+        #             "deploy_name": r.deploy_name,
+        #             "deploy_host": r.deploy_host,
+        #             "deploy_status": r.deploy_status,
+        #             "deploy_date": r.deploy_time.strftime("%Y-%m-%d %H:%M:%S")
+        #         }
+        #         rows.append(row)
+        #     self.response.set_display(rows)
+        #     conn.close()
+        #     return SUCCESS
+        # if instruction["history"]:
+        #     s = select(UmpDeployInfo).where(UmpDeployInfo.deploy_name == deploy_name)
+        # else:
+        #     s = select(UmpDeployInfo).where(UmpDeployInfo.deploy_status == CURRENT,
+        #                                     UmpDeployInfo.deploy_name == deploy_name)
+        # rs = conn.execute(s)
+        # for r in rs:
+        #     row = {
+        #         "deploy_name": r.deploy_name,
+        #         "deploy_path": r.deploy_path,
+        #         "deploy_app": r.deploy_app,
+        #         "deploy_app_last": r.deploy_app_last,
+        #         "deploy_group": r.deploy_group,
+        #         "host_num": r.deploy_host_num,
+        #         "failed_num": r.deploy_failed_num,
+        #         "deploy_status": r.deploy_status,
+        #         "deploy_date": r.deploy_time.strftime("%Y-%m-%d %H:%M:%S")
+        #     }
+        #     rows.append(row)
+        # self.response.set_display(rows)
+        # conn.close()
         return SUCCESS
 
     def set(self, instruction):
@@ -70,7 +70,7 @@ class Action(ActionBase):
         deploy_home = instruction["dest"]
         deploy_name = self.name
         try:
-            meta = ReleaseMeta(app_name, app_tag)
+            meta = module.ReleaseModule(app_name, app_tag)
         except AttributeError as error:
             logger.error(error)
             logger.error("Not found app in register")
@@ -81,92 +81,60 @@ class Action(ActionBase):
         src_target = os.path.join(registry_path, app_name, app_tag, file_id)
         file_suffix = meta.get_file_suffix()
         file = file_id + "." + file_suffix
-        # Linux 分隔符
-        linux_sep = "/"
         if deploy_home is None or deploy_home == "":
-            self.response.set_display([{"Info": "Missing dest parameter"}])
+            self.response.set_display([{"Error": "Missing dest parameter"}])
             return FAILED
-        if deploy_home[-1] != linux_sep:
-            deploy_home = deploy_home + linux_sep
-        # deploy_target = deploy_home + deploy_name + linux_sep + app_tag + linux_sep + file
-        # 登记部署信息
-        db = DB()
-        conn = db.get_connect()
+        if deploy_home[-1] != LINUX_SEP:
+            deploy_home = deploy_home + LINUX_SEP
+        prev_deploy_app = ""
+        prev_deploy_id = ""
+        deploy_service = DeployService()
         # 获取当前部署状态
-        s = select(UmpDeployInfo). \
-            where(UmpDeployInfo.deploy_status == CURRENT,
-                  UmpDeployInfo.deploy_name == self.name)
-        rs = conn.execute(s).fetchone()
-        deploy_app_last = ""
-        deploy_app_id_last = ""
-        if rs is not None:
-            deploy_app_last = rs._mapping["deploy_app"]
-            deploy_app_id_last = rs._mapping["id"]
-            if deploy_app_last == app:
-                self.response.set_display([{"Info": "The app has been deployed"}])
-                return SUCCESS
+        deploy_info = deploy_service.get_current_deploy_info(deploy_name)
+        if deploy_info is not None:
+            prev_deploy_app = deploy_info["deploy_app"]
+            prev_deploy_id = deploy_info["deploy_id"]
+            if prev_deploy_app == app:
+                self.response.set_display([{"WARN": app + " has been deployed"}])
+                return WARN
         c1 = Connector()
         ssh_pool = c1.get_ssh_pool(self.group)
         handler = RemoteHandler(self.config.get_ssh_timeout())
-        deploy_path = deploy_home + deploy_name + linux_sep + app_tag
+        parent_dir = deploy_home + self.config.get_root_dir_name()
+        deploy_path = parent_dir + LINUX_SEP + deploy_name + LINUX_SEP + app_tag
         handler.remote_shell(ssh_pool, "mkdir -p " + deploy_path)
         c1.close_ssh_connect()
         c2 = Connector()
         ssh_pool = c2.get_ssh_pool(self.group)
-        deploy_target = deploy_path + linux_sep + file
-        success_hosts, failed_hosts = handler.remote_copy(ssh_pool, src_target, deploy_target)
+        deploy_target = deploy_path + LINUX_SEP + file
+        success_hosts, failure_hosts = handler.remote_copy(ssh_pool, src_target, deploy_target)
         c2.close_ssh_connect()
         host_num = len(ssh_pool)
-        failed_num = len(failed_hosts)
-        if failed_num == host_num:
-            self.response.set_display([{"Error": "Deploy failed"}])
+        failure_hosts = len(failure_hosts)
+        if failure_hosts == host_num:
+            self.response.set_display([{"Error": "Deploy failure"}])
             return FAILED
-        # 开启事务
-        with conn.begin():
-            # 将当前部署状态归档
-            s1 = update(UmpDeployInfo). \
-                where(UmpDeployInfo.id == deploy_app_id_last). \
-                values({"deploy_status": COMPLETED})
-            conn.execute(s1)
-            deploy_info = {
-                "deploy_name": self.name,
-                "deploy_path": deploy_target,
-                "deploy_app": instruction["app"],
-                "deploy_group": self.group,
-                "deploy_app_last": deploy_app_last,
-                "deploy_comment": self.comment,
-                "deploy_host_num": host_num,
-                "deploy_failed_num": failed_num
-            }
-            # 更新最新部署状态
-            s2 = insert(UmpDeployInfo).values(deploy_info)
-            conn.execute(s2)
-            # 删除部署细节信息
-            s3 = delete(UmpDeployDetailInfo).where(UmpDeployDetailInfo.deploy_name == self.name)
-            conn.execute(s3)
-            detail_rows = []
-            for f in failed_hosts:
-                v = {
-                    "deploy_name": self.name,
-                    "deploy_host": f,
-                    "deploy_status": "failed"
-                }
-                detail_rows.append(v)
-            for f in success_hosts:
-                v = {
-                    "deploy_name": self.name,
-                    "deploy_host": f,
-                    "deploy_status": "success"
-                }
-                detail_rows.append(v)
-            # 更新最新部署细节信息
-            s4 = insert(UmpDeployDetailInfo).values(detail_rows)
-            conn.execute(s4)
-        conn.close()
+        deploy_service.create_new_deploy(prev_deploy_id=prev_deploy_id,
+                                         prev_deploy_app=prev_deploy_app,
+                                         deploy_group=self.group,
+                                         deploy_name=deploy_name,
+                                         deploy_path=deploy_target,
+                                         deploy_app=app,
+                                         success_hosts=success_hosts,
+                                         failure_hosts=failure_hosts,
+                                         deploy_comment=self.comment)
+        deploy_service.close_db_connection()
+        # 清空上一次健康检测任务
+        job_service = JobDBService()
+        job_service.delete_job_by_target(deploy_name, "deploy")
+        # 开启健康检测
+        if instruction["health"]:
+            job_id = job_service.save_job(deploy_name, "deploy")
+        job_service.close_job_db_connection()
         # end
         rows = []
-        if len(failed_hosts) != 0:
-            for h in failed_hosts:
+        if len(failure_hosts) != 0:
+            for h in failure_hosts:
                 row = {
                     "failed host": h
                 }
@@ -177,31 +145,31 @@ class Action(ActionBase):
         return SUCCESS
 
     def delete(self, instruction):
-        deploy_name = self.name
-        if deploy_name == "":
-            self.response.set_display([{"Warning": "name value is missing!"}])
-            return WARN
-        db = DB()
-        conn = db.get_connect()
-        s = select(UmpDeployInfo). \
-            where(UmpDeployInfo.deploy_status == CURRENT,
-                  UmpDeployInfo.deploy_name == self.name)
-        rs = conn.execute(s).fetchone()
-        if rs is None:
-            self.response.set_display([{"Warning": "Not found " + deploy_name}])
-            return WARN
-        with conn.begin():
-            if instruction["history"]:
-                s1 = delete(UmpDeployInfo). \
-                    where(UmpDeployInfo.deploy_name == deploy_name,
-                          UmpDeployInfo.deploy_status == COMPLETED)
-            else:
-                s1 = delete(UmpDeployInfo).where(UmpDeployInfo.deploy_name == deploy_name)
-
-            s2 = delete(UmpDeployDetailInfo).where(UmpDeployDetailInfo.deploy_name == deploy_name)
-            c1 = conn.execute(s1)
-            print(c1.rowcount)
-            c2 = conn.execute(s2)
-        conn.close()
-        self.response.set_display([{"Info": deploy_name + " has been deleted"}])
+        # deploy_name = self.name
+        # if deploy_name == "":
+        #     self.response.set_display([{"Warning": "name value is missing!"}])
+        #     return WARN
+        # db = DB()
+        # conn = db.get_connect()
+        # s = select(UmpDeployInfo). \
+        #     where(UmpDeployInfo.deploy_status == CURRENT,
+        #           UmpDeployInfo.deploy_name == self.name)
+        # rs = conn.execute(s).fetchone()
+        # if rs is None:
+        #     self.response.set_display([{"Warning": "Not found " + deploy_name}])
+        #     return WARN
+        # with conn.begin():
+        #     if instruction["history"]:
+        #         s1 = delete(UmpDeployInfo). \
+        #             where(UmpDeployInfo.deploy_name == deploy_name,
+        #                   UmpDeployInfo.deploy_status == COMPLETED)
+        #     else:
+        #         s1 = delete(UmpDeployInfo).where(UmpDeployInfo.deploy_name == deploy_name)
+        #
+        #     s2 = delete(UmpDeployDetailInfo).where(UmpDeployDetailInfo.deploy_name == deploy_name)
+        #     c1 = conn.execute(s1)
+        #     print(c1.rowcount)
+        #     c2 = conn.execute(s2)
+        # conn.close()
+        # self.response.set_display([{"Info": deploy_name + " has been deleted"}])
         return SUCCESS

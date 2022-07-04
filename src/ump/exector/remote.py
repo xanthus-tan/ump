@@ -2,32 +2,30 @@
 import socket
 
 from paramiko.ssh_exception import SSHException
-from sqlalchemy.sql import select
 
-from src.ump.modules.hosts.model import UmpHostsInfo, HOST_ONLINE
+from src.ump.modules.hosts.meta import HostsMetaInstance
 from src.ump.utils import current_time_str
-from src.ump.utils.dbutils import DB
 from src.ump.utils.logger import logger
 from src.ump.utils.ssh import SSH, SFTP
 
 
 # 远程连接类
 class Connector:
-
     def __init__(self):
-        self.db = DB()
-        self.hosts = []
         self.ssh_pool = []
 
     def get_ssh_pool(self, group):
-        s = select(UmpHostsInfo).where(UmpHostsInfo.status == HOST_ONLINE, UmpHostsInfo.group_id == group)
-        conn = self.db.get_connect()
-        rs = conn.execute(s)
-        for r in rs:
-            ssh = SSH(r.address, 22, r.login_username, r.login_password)
-            self.ssh_pool.append(ssh)
-        conn.close()
+        hostsMeta = HostsMetaInstance()
+        hosts = hostsMeta.get_host_online_info(group)
+        self.ssh_pool = self.get_ssh_list(hosts)
         return self.ssh_pool
+
+    def get_ssh_list(self, hosts: []):
+        ssh_list = []
+        for h in hosts:
+            ssh = SSH(h["addr"], h["port"], h["username"], h["password"])
+            ssh_list.append(ssh)
+        return ssh_list
 
     def close_ssh_connect(self):
         for ssh in self.ssh_pool:
@@ -41,8 +39,8 @@ class RemoteHandler:
 
     # 执行SSH远程命令
     def remote_shell(self, ssh_pool: [], cmd):
-        v = []
-        failed_hosts = []
+        success = []
+        failed = []
         for ssh in ssh_pool:
             try:
                 c = ssh.connect_server(self.timeout)
@@ -52,19 +50,19 @@ class RemoteHandler:
                      "time": current_time_str(),
                      "host": ssh.get_address()
                      }
-                v.append(j)
+                success.append(j)
                 logger.debug("Host " + ssh.get_address() + " is running " + cmd)
             except SSHException:
                 logger.error(ssh.get_address() + "'s ssh session not active")
-                failed_hosts.append(ssh.get_address())
+                failed.append(ssh.get_address())
             except AttributeError:
                 logger.error(ssh.get_address() + "'not open_session, cause by object has no attribute open_session")
-                failed_hosts.append(ssh.get_address())
+                failed.append(ssh.get_address())
             except socket.timeout:
                 logger.error(ssh.get_address() + "'s ssh connect time out")
-                failed_hosts.append(ssh.get_address())
+                failed.append(ssh.get_address())
                 continue
-        return v, failed_hosts
+        return success, failed
 
     # 远程部署文件
     def remote_copy(self, ssh_pool: [], src, des):

@@ -12,6 +12,8 @@ module_path = os.path.join(config_path, "modules")
 
 CONFIG_FILE = "ump.yaml"
 
+# Linux 分隔符
+LINUX_SEP = "/"
 
 def ump_config_yaml():
     with open(os.path.join(config_path, CONFIG_FILE), encoding='utf-8') as f:

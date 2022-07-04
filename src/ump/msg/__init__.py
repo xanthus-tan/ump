@@ -7,7 +7,7 @@ WARN = 400
 
 # UMP状态码
 client_prompt = {
-    200: "Command was completed successful!",
+    200: "ok!",
     # 警告信息
     401: "UMP Waring: The client could not match in current ump version. please update your client !",
     # 错误信息

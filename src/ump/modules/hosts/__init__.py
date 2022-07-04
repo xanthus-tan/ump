@@ -1,11 +1,12 @@
 # (c) 2021, xanthus tan <tanxk@neusoft.com>
 import re
 
+import sqlalchemy
 from sqlalchemy.sql import select, delete, insert
-
+from src.ump.utils.logger import logger
 from src.ump.modules import ActionBase
 from src.ump.modules.hosts.model import UmpHostsInfo, HOST_ONLINE
-from src.ump.msg import SUCCESS, WARN
+from src.ump.msg import SUCCESS, WARN, FAILED
 from src.ump.utils.dbutils import DB
 
 
@@ -43,12 +44,25 @@ class Action(ActionBase):
         group_name = self.group
         address_list = instruction["address"].split(",")
         insert_values = []
-        for adr in address_list:
-            v = {"address": adr, "group_id": group_name, "login_username": user, "login_password": password}
+        for url in address_list:
+            url = url.split(":")
+            ip = url[0]
+            port = self.config.get_ssh_default_port()
+            if len(url) > 1:
+                port = url[1]
+            v = {"address": ip, "port": port, "group_id": group_name,
+                 "login_username": user, "login_password": password}
             insert_values.append(v)
         conn = self.conn.get_connect()
         s = insert(UmpHostsInfo).values(insert_values)
-        r = conn.execute(s)
+        try:
+            r = conn.execute(s)
+        except sqlalchemy.exc.IntegrityError as error:
+            logger.error(error)
+            display = [{"Error": "host duplicated"}]
+            self.response.set_display(display)
+            conn.close()
+            return FAILED
         conn.close()
         display = [{"Info": str(r.rowcount) + " rows updated"}]
         self.response.set_display(display)

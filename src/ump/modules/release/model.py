@@ -20,7 +20,7 @@ class UmpReleaseInfo(Base):
     release_origin_name = Column(String(50))
     release_origin_suffix = Column(String(10))
     release_comment = Column(String(100))
-    release_push_time = Column(DateTime, default=get_current_local_datetime())
+    release_push_time = Column(DateTime, default=get_current_local_datetime)
     __table_args__ = (
         UniqueConstraint('release_name', 'release_name_tag'),  # 发布的项目name:tag不能重复
     )

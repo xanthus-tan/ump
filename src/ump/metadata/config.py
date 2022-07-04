@@ -12,6 +12,9 @@ class UMPConfig:
     def __init__(self):
         self.ump = ump_config_yaml()
 
+    def get_root_dir_name(self):
+        return self.ump["node"]["root_dir_name"]
+
     def get_registry_path(self):
         return os.path.join(ump_home, self.ump["registry"]["path"])
 
@@ -65,6 +68,9 @@ class UMPConfig:
 
     def get_ssh_timeout(self):
         return int(self.ump["ssh"]["timeout"])
+
+    def get_ssh_default_port(self):
+        return self.ump["ssh"]["port"]
 
     def get_pid_path(self):
         return os.path.join(ump_home, self.ump["server"]["pid"]["path"])

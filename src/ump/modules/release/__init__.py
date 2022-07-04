@@ -64,7 +64,7 @@ class Action(ActionBase):
         except sqlalchemy.exc.IntegrityError as error:
             logger.error(error)
             conn.close()
-            self.response.set_display([{"Info": "push failed, Reason: name's tag duplicated"}])
+            self.response.set_display([{"Error": "push failed, Reason: name's tag duplicated"}])
             return FAILED
         conn.close()
         self.response.set_parameter("fileId", file_id)

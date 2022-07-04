@@ -1,5 +1,8 @@
 ---
 ump:
+  node:
+    # 节点目录名称
+    root_dir_name: ump
   server:
     # ump监听端口
     port: 3003
@@ -17,6 +20,8 @@ ump:
   ssh:
     # ssh连接超时时间
     timeout: 2
+    # 连接ssh默认端口
+    port: 22
   registry:
     # 登记中心默认路径 $UMP_HOME/registry
     path: registry

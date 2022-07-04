@@ -1,14 +1,24 @@
 # (c) 2021, xanthus tan <tanxk@neusoft.com>
-from src.ump.modules.release.meta import ReleaseMetaInstance
+from abc import ABC, abstractmethod
 
 
-class ReleaseMeta:
-    def __init__(self, name, tag):
-        meta = ReleaseMetaInstance()
-        self.info = meta.get_meta_info(name, tag)
+class HostsMeta(ABC):
 
-    def get_file_id(self):
-        return self.info["file_id"]
+    @abstractmethod
+    def get_host_info(self, group_id, host_ip):
+        pass
 
-    def get_file_suffix(self):
-        return self.info["app_suffix"]
+    @abstractmethod
+    def get_host_online_info(self, group_id):
+        pass
+
+
+class DeployMeta(ABC):
+
+    @abstractmethod
+    def get_deploy_success_hosts(self, deploy_name) -> []:
+        return []
+
+    @abstractmethod
+    def get_deploy_success_hosts_info(self, deploy_name) -> []:
+        return []

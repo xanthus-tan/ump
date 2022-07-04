@@ -27,6 +27,10 @@ deploy模块
   ump-cli.py --module deploy --action get --name demo-deploy --history true
   ump-cli.py --module deploy --action delete --name demo-deploy
   ump-cli.py --module deploy --action delete --name demo-deploy --history true
+service模块
+  ump-cli.py --module instance --action get --deploy-name demo-deploy
+  ump-cli.py --module instance --action set --deploy-name demo-deploy --control start
+  ump-cli.py --module instance --action set --deploy-name demo-deploy --control stop
 """
 import json
 import optparse
@@ -34,6 +38,7 @@ import os
 import socket
 import requests
 from prettytable import PrettyTable
+
 # *******************版本*******************
 UMP_CLI_VERSION = "1.1"
 # *****************************************
@@ -128,6 +133,10 @@ def command_format():
                             dest="detail",
                             type="string",
                             help="")
+    deploy_group.add_option("", "--health",
+                            dest="health",
+                            type="string",
+                            help="")
     parser.add_option_group(deploy_group)
 
     # ump release moudle
@@ -157,6 +166,18 @@ def command_format():
                              type="string",
                              help="")
     parser.add_option_group(release_group)
+
+    # ump deploy moudle
+    service_group = optparse.OptionGroup(parser, "instance module")
+    service_group.add_option("", "--deploy-name",
+                             dest="deploy-name",
+                             type="string",
+                             help="deploy name")
+    service_group.add_option("", "--control",
+                             dest="control",
+                             type="string",
+                             help="app start command")
+    parser.add_option_group(service_group)
     return parser
 
 
@@ -228,7 +249,7 @@ def upload_file(path, fid, name, tag):
 # 终端显示
 class Display:
     def __init__(self):
-        self.display_mode = "monochrome" # default display mode
+        self.display_mode = "monochrome"  # default display mode
 
     def display_to_teminal(self, msg):
         if self.display_mode == "monochrome":

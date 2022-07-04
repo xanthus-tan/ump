@@ -19,3 +19,7 @@ module:
     type: boolean
     default: false
     describe: 查看细节信息参数
+  - name: health
+    type: boolean
+    default: true
+    describe: 健康检测开关

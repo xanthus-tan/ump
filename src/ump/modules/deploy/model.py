@@ -26,7 +26,7 @@ class UmpDeployInfo(Base):
     deploy_time = Column(DateTime, default=get_current_local_datetime)
     __table_args__ = (
         # 部署id不能重复
-        UniqueConstraint("deploy_id"),
+        UniqueConstraint('deploy_id'),
     )
 
 

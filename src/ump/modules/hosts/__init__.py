@@ -33,7 +33,12 @@ class Action(ActionBase):
         group_name = self.group
         address_list = instruction["address"].split(",")
         host_service = HostService()
-        info = host_service.register_host(hosts=address_list, group_name=group_name, user=user, password=password)
+        default_port = self.config.get_ssh_default_port()
+        info = host_service.register_host(hosts=address_list,
+                                          default_port=default_port,
+                                          group_name=group_name,
+                                          user=user,
+                                          password=password)
         host_service.close_db_connection()
         if info == FAILED:
             self.response.set_display([{"Error": "host duplicated"}])
@@ -45,12 +50,15 @@ class Action(ActionBase):
     def delete(self, instruction):
         group_name = self.group
         addr = instruction["address"]
-        host_service = HostService
+        host_service = HostService()
         ip_reg = "(([01]{0,1}\\d{0,1}\\d|2[0-4]\\d|25[0-5])\\.){3}([01]{0,1}\\d{0,1}\\d|2[0-4]\\d|25[0-5])"
+        if group_name == "" or group_name is None:
+            self.response.set_display([{"Warn": "group value is missing!"}])
+            return WARN
         if addr is None:
-            info = host_service.delete_host_by_group(group_name)
+            info = host_service.delete_host_by_group(group_name=group_name)
         elif re.match(ip_reg, addr):
-            info = host_service.delete_host_by_address(addr)
+            info = host_service.delete_host_by_address(group_name, addr)
         else:
             self.response.set_display([{"Info": "not found host or group"}])
             return WARN

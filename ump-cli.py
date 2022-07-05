@@ -5,6 +5,8 @@ cli example
 hosts模块
   ump-cli.py --module hosts --action get --group g1
   ump-cli.py --module hosts --action set --group g1 --address 192.168.72.130,192.168.72.132 --user xanthus --password 1
+  ump-cli.py --module hosts --action delete --group g1
+  ump-cli.py --module hosts --action delete --group g1 --address 192.168.72.130
 monitor模块
   ump-cli.py --module monitor --action get --group g1 --type status
   ump-cli.py --module monitor --action get --group g1 --type metrics
@@ -26,7 +28,6 @@ deploy模块
   ump-cli.py --module deploy --action get --name demo-deploy --detail true
   ump-cli.py --module deploy --action get --name demo-deploy --history true
   ump-cli.py --module deploy --action delete --name demo-deploy
-  ump-cli.py --module deploy --action delete --name demo-deploy --history true
 service模块
   ump-cli.py --module instance --action get --deploy-name demo-deploy
   ump-cli.py --module instance --action set --deploy-name demo-deploy --control start

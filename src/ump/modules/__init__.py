@@ -22,7 +22,6 @@ class ActionBase(ABC):
         # debug信息
         # 显示模块接收到的参数
         logger.debug(arg)
-        print(arg)
         self.instruction = arg["instruction"]
         self.action = arg["action"]
         self.module_name = arg["module"]

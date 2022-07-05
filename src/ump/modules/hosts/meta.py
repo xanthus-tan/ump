@@ -94,8 +94,9 @@ class HostService:
         r = self.conn.execute(s)
         return r.rowcount
 
-    def delete_host_by_address(self, address):
-        s = delete(UmpHostsInfo).where(UmpHostsInfo.address == address)
+    def delete_host_by_address(self, group_id, address):
+        s = delete(UmpHostsInfo).where(UmpHostsInfo.group_id == group_id,
+                                       UmpHostsInfo.address == address)
         r = self.conn.execute(s)
         return r.rowcount
 

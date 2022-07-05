@@ -52,6 +52,8 @@ class DeployService:
 
     def get_current_deploy_id_and_app(self, deploy_name):
         rows = self.get_deploy_info(deploy_name)
+        if rows is None:
+            return None
         if len(rows) == 1:
             row = rows[0]
             deploy = {
@@ -59,8 +61,6 @@ class DeployService:
                 "deploy_app": row["deploy_app"]
             }
             return deploy
-        else:
-            return None
 
     def get_deploy_info(self, deploy_name=None, history=False):
         deploy_rows = []
@@ -69,13 +69,14 @@ class DeployService:
             rs = self.conn.execute(s)
             for r in rs:
                 row = {
+                    "deploy_id": r.deploy_id,
                     "deploy_name": r.deploy_name,
                     "deploy_path": r.deploy_path,
                     "deploy_app": r.deploy_app,
                     "deploy_app_last": r.deploy_app_last,
                     "deploy_group": r.deploy_group,
                     "host_num": r.deploy_host_num,
-                    "failed_num": r.deploy_failed_num,
+                    "failed_num": r.deploy_failure_num,
                     "deploy_status": r.deploy_status,
                     "deploy_date": r.deploy_time.strftime("%Y-%m-%d %H:%M:%S")
                 }
@@ -84,7 +85,10 @@ class DeployService:
             s = select(UmpDeployInfo).where(UmpDeployInfo.deploy_status == DEPLOY_CURRENT,
                                             UmpDeployInfo.deploy_name == deploy_name)
             rs = self.conn.execute(s).fetchone()
+            if rs is None:
+                return None
             row = {
+                "deploy_id": rs["deploy_id"],
                 "deploy_name": rs["deploy_name"],
                 "deploy_path": rs["deploy_path"],
                 "deploy_app": rs["deploy_app"],
@@ -93,7 +97,7 @@ class DeployService:
                 "host_num": rs["deploy_host_num"],
                 "failure_num": rs["deploy_failure_num"],
                 "deploy_status": rs["deploy_status"],
-                "deploy_date": rs["deploy_date"].strftime("%Y-%m-%d %H:%M:%S")
+                "deploy_date": rs["deploy_time"].strftime("%Y-%m-%d %H:%M:%S")
             }
             deploy_rows.append(row)
         return deploy_rows
@@ -110,9 +114,9 @@ class DeployService:
                           ):
         if success_hosts is None:
             success_hosts = []
-        with self.conn.begin:
+        with self.conn.begin():
             s1 = update(UmpDeployInfo). \
-                where(UmpDeployInfo.id == prev_deploy_id). \
+                where(UmpDeployInfo.deploy_name == deploy_name). \
                 values({"deploy_status": DEPLOY_COMPLETED})
             self.conn.execute(s1)
             new_deploy_id = get_unique_id()
@@ -151,13 +155,13 @@ class DeployService:
             s3 = delete(UmpDeployInstanceInfo).where(UmpDeployInstanceInfo.deploy_id == prev_deploy_id)
             self.conn.execute(s3)
             # 更新新部署实例信息
-            s4 = insert(UmpDeployInstanceInfo).value(instance_rows)
+            s4 = insert(UmpDeployInstanceInfo).values(instance_rows)
             self.conn.execute(s4)
 
     def delete_deploy(self, deploy_name):
         s = select(UmpDeployInfo). \
             where(UmpDeployInfo.deploy_status == DEPLOY_CURRENT,
-                  UmpDeployInfo.deploy_name == self.name)
+                  UmpDeployInfo.deploy_name == deploy_name)
         rs = self.conn.execute(s).fetchone()
         if rs is None:
             return None
@@ -178,12 +182,13 @@ class DeployService:
         for r in rs:
             row = {
                 "deploy_name": r.deploy_name,
-                "deploy_host": r.deploy_host,
-                "deploy_status": r.deploy_status,
+                "instance_id": r.instance_id,
+                "instance_host": r.instance_host,
+                "instance_status": r.instance_status,
                 "deploy_date": r.deploy_time.strftime("%Y-%m-%d %H:%M:%S")
             }
             instance_info_rows.append(row)
-            return instance_info_rows
+        return instance_info_rows
 
     def close_db_connection(self):
         self.conn.close()

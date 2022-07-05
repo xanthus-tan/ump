@@ -27,6 +27,8 @@ class Action(ActionBase):
         history = instruction["history"]
         deploy_service = DeployService()
         rows = deploy_service.get_deploy_info(deploy_name, history=history)
+        if rows is None:
+            return SUCCESS
         self.response.set_display(rows)
         deploy_service.close_db_connection()
         return SUCCESS
@@ -78,8 +80,7 @@ class Action(ActionBase):
         success_hosts, failure_hosts = handler.remote_copy(ssh_pool, src_target, deploy_target)
         c2.close_ssh_connect()
         host_num = len(ssh_pool)
-        failure_hosts = len(failure_hosts)
-        if failure_hosts == host_num:
+        if len(failure_hosts) == host_num:
             self.response.set_display([{"Error": "Deploy failure"}])
             return FAILED
         deploy_service.create_new_deploy(prev_deploy_id=prev_deploy_id,

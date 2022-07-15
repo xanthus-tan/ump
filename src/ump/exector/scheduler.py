@@ -128,7 +128,7 @@ class JobDBService:
             return None
         job = Job()
         job.job_stop(job_id)
-        s = delete(JobModel).where(JobModel.target_name == target_name,
+        s = delete(JobModel).where(JobModel.job_target_name == target_name,
                                    JobModel.job_type == target_type)
         self.conn.execute(s)
 

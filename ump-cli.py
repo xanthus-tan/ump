@@ -43,9 +43,9 @@ import requests
 from prettytable import PrettyTable
 
 # *******************版本*******************
-UMP_CLI_VERSION = "2.1"
+UMP_CLI_VERSION = "2.2"
 # *****************************************
-HOST = socket.gethostname()
+HOST = "127.0.0.1"
 BUFFER_SIZE = 1024 * 8
 REGISTRY_URL = "http://127.0.0.1:3002/registry/push"
 

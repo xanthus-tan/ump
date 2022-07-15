@@ -79,6 +79,13 @@ class Action(ActionBase, UmpJob):
             logger.error("Not found app in register")
             self.response.set_display([{"Error": "Not found app in register"}])
             return FAILED
+        deploy_service = DeployService()
+        instances = deploy_service.get_deploy_instance_info(deploy_name)
+        for ins in instances:
+            status = ins["instance_status"]
+            if status == INSTANCE_START:
+                self.response.set_display([{"WARN": "The instnace is alive, the first close instnace."}])
+                return WARN
         release_file_id = meta.get_file_id()
         registry_path = self.config.get_registry_path()
         src_target = os.path.join(registry_path, app_name, app_tag, release_file_id)
@@ -91,7 +98,6 @@ class Action(ActionBase, UmpJob):
             deploy_home = deploy_home + LINUX_SEP
         prev_deploy_app = ""
         prev_deploy_id = ""
-        deploy_service = DeployService()
         # 获取当前部署状态
         deploy_info = deploy_service.get_current_deploy_id_and_app_name(deploy_name)
         if deploy_info is not None:
@@ -163,8 +169,8 @@ class Action(ActionBase, UmpJob):
         for ins in instances:
             status = ins["instance_status"]
             if status == INSTANCE_START:
-                self.response.set_display([{"WARN": "The first close all instances otherwise deploy cannot be deleted"}])
-                return SUCCESS
+                self.response.set_display([{"WARN": "The first close all instances otherwise it cannot be deleted"}])
+                return WARN
         result = deploy_service.delete_deploy(deploy_name)
         if result is None:
             self.response.set_display([{"Warn": "Not found " + deploy_name}])

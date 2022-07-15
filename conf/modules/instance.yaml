@@ -11,7 +11,7 @@ module:
     type: string
     default:
     describe: 服务控制命令(start | stop)
-  - name: inst-id
+  - name: insid
     type: string
     default:
     describe: 实例ID

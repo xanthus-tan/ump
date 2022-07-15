@@ -17,9 +17,11 @@ ump:
       handler: console
       # 日志文件默认路径 $UMP_HOME/logs/ump.log
       path: logs/ump.log
+  health:
+    interval: 3
   ssh:
     # ssh连接超时时间
-    timeout: 2
+    timeout: 1
     # 连接ssh默认端口
     port: 22
   registry:
@@ -43,7 +45,7 @@ ump:
         path: logs/metrics.log
       elasticsearch:
         enable: true
-        url: http://192.168.178.247:9200
+        url: http://192.168.178.232:9200
        # username: elastic
        # password: elastic
        # cert: conf/http_ca.crt

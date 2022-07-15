@@ -4,12 +4,13 @@ import signal
 import sys
 import threading
 
+from src.ump.exector.scheduler import job_startup
 from src.ump.metadata import config_path
 from src.ump.metadata.config import UMPConfig
 from src.ump.server.server import ServerCLI, ServerRegistry
 from src.ump.utils.logger import logger
 
-VERSION = "UMP 1.2"
+VERSION = "UMP 2.2"
 if __name__ == '__main__':
     cmd = ""
     try:
@@ -37,11 +38,12 @@ if __name__ == '__main__':
         server_cli = ServerCLI(config)
         ump_thread = threading.Thread(target=server_cli.run, daemon=True)
         ump_thread.start()
+        job_thread = threading.Thread(target=job_startup, daemon=True)
+        job_thread.start()
         pid_file = config.get_pid_path()
         with open(pid_file, "w") as f:
             pid = os.getpid()
             f.writelines(str(pid))
-        registry_thread.join()
         ump_thread.join()
     else:
         print("Usage: ump.py start || stop")

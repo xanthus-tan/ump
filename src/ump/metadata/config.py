@@ -30,6 +30,9 @@ class UMPConfig:
     def get_registry_size_limit(self):
         return int(self.ump["registry"]["file_size_limit"])
 
+    def get_health_interval(self):
+        return int(self.ump["health"]["interval"])
+
     def get_collector_path(self):
         return os.path.join(ump_home, self.ump["monitor"]["tool"]["path"])
 

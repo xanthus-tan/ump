@@ -33,7 +33,6 @@ class InstructionHandler:
         try:
             my_handler = getattr(
                 __import__("src.ump.modules.{0}".format(module_name), fromlist=[module_class]), module_class)
-            print(my_handler)
             module = my_handler()
             res = module.execute(attr, self.config)
             message["module"] = res.get_response()

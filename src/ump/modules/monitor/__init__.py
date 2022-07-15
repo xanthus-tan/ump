@@ -47,7 +47,6 @@ class Action(ActionBase):
                 self.response.set_display(display)
                 return WARN
             v = display_metrics(metrics, failed_hosts)
-            c.close_ssh_connect()
             display = v
             self.response.set_display(display)
             return SUCCESS
@@ -64,7 +63,6 @@ class Action(ActionBase):
             handler = RemoteHandler(self.config.get_ssh_timeout())
             dir_name = os.path.dirname(cpath)
             sh, fh = handler.remote_shell(ssh_pool, "mkdir -p " + dir_name)
-            c1.close_ssh_connect()
             c2 = Connector()
             ssh_pool = c2.get_ssh_pool(self.group)
             # 简单写法，数据量少性能不会有太大影响
@@ -78,7 +76,6 @@ class Action(ActionBase):
                                         "success: " + str(len(sh)) +
                                         "\n" +
                                         "failed: " + str(len(fh))}])
-            c2.close_ssh_connect()
             return SUCCESS
         if instruction["auto"]:
             file_status = self.config.get_metrics_to_file_enable_status()
@@ -115,7 +112,6 @@ class Action(ActionBase):
             status_list.append(m)
             display = [m]
             self.response.set_display(display)
-            c3.close_ssh_connect()
         return SUCCESS
 
     def delete(self, instruction):

@@ -1,82 +1,133 @@
 # (c) 2021, xanthus tan <tanxk@neusoft.com>
 import os
 
-from sqlalchemy import delete, insert
-
-from src.ump.exector.scheduler import JobDBService
-from src.ump.metadata import LINUX_SEP
 from src.ump.exector.remote import Connector, RemoteHandler
+from src.ump.metadata import LINUX_SEP
 from src.ump.metadata.module import DeployModule, HostsModule
 from src.ump.modules import ActionBase
-from src.ump.utils.logger import logger
-from src.ump.utils import get_unique_id
 from src.ump.msg import SUCCESS, FAILED, WARN
-from src.ump.utils.dbutils import DB
-from src.ump.modules.instance.model import UmpInstanceInfo
-
-# service模块具体实现
-# instance状态
-STOP = "stop"
-RUN = "running"
+from src.ump.utils.logger import logger
 
 
+# instance模块具体实现
 class Action(ActionBase):
 
     def get(self, instruction):
-        logger.info("get instance")
+        deploy_name = instruction["deploy-name"]
+        deploy_module = DeployModule()
+        info = deploy_module.get_deploy_success_hosts_info(deploy_name)
+        self.response.set_display(info)
+        return SUCCESS
 
     def set(self, instruction):
-        if instruction["deploy-name"] is None or instruction["deploy-name"] == "":
+        deploy_name = instruction["deploy-name"]
+        if deploy_name is None or deploy_name == "":
             self.response.set_display([{"Warning: ": "deploy name missing"}])
             return WARN
-        deploy_name = instruction["deploy-name"]
+        ctl = instruction["control"]
+        if ctl is None or ctl == "":
+            self.response.set_display([{"Warn: ": "control parameter　not found"}])
+            return WARN
+        instance_id = instruction["insid"]
+        ctl = instruction["control"]
         dm = DeployModule()
-        hosts_info = dm.get_deploy_success_hosts_info(deploy_name)
-        db = DB()
-        conn = db.get_connect()
-        instance_rows = []
-        host_rows = []
-        host_instance = HostsModule()
-        app_absolute_path = ""
-        for h in hosts_info:
-            host_ip = h["deploy_host"]
-            host_group = h["deploy_group"]
-            row = {
-                "instance_id": get_unique_id(),
-                "instance_path": h["app_path"],
-                "instance_pid": "-",
-                "instance_port": "-",
-                "instance_group": host_group,
-                "instance_host": host_ip,
-                "instance_deploy_name": deploy_name,
-                "instance_status": STOP,
-            }
-            instance_rows.append(row)
-            host_info = host_instance.get_host_info(host_group, host_ip)
-            host_rows.append(host_info)
-            app_absolute_path = h["app_path"]
-        if app_absolute_path == "":
-            self.response.set_display([{"Error: ": "deploy error, not found app in server"}])
-            return FAILED
-        with conn.begin():
-            s1 = delete(UmpInstanceInfo).where(UmpInstanceInfo.instance_deploy_name == deploy_name)
-            conn.execute(s1)
-            s2 = insert(UmpInstanceInfo).values(instance_rows)
-            conn.execute(s2)
-        job_service = JobDBService()
-        job_id = job_service.get_job_id_by_target(deploy_name, "deploy")
-        if instruction["control"] == "start":
-            ssh_conn = Connector()
-            pool = ssh_conn.get_ssh_list(host_rows)
-            app_dir = os.path.dirname(app_absolute_path)
-            log = app_dir + LINUX_SEP + "app.log"
-            cmd = "java -jar " + app_absolute_path + " > " + log + " 2>&1 &"
-            # cmd = "java -jar " + app_absolute_path
-            ssh_handler = RemoteHandler()
-            s, f = ssh_handler.remote_shell(pool, cmd)
-            print(s)
-            logger.info("start app")
-        conn.close()
+        deploy_path = dm.get_deploy_path(deploy_name)
+        if instance_id is None or instance_id == "":
+            if ctl == "start":
+                started_instances = dm.get_started_instance_info(deploy_name)
+                group_name = dm.get_deploy_group(deploy_name)
+                ssh_conn = Connector()
+                ssh_pool = ssh_conn.get_ssh_pool(group_name)
+                s, f = _start_instance(ssh_pool, deploy_path)
+                if len(f) == len(ssh_pool):
+                    self.response.set_display([{"failure": "start instance failure, could not connect to host"}])
+                    return FAILED
+                logger.info("start instance all")
+                if len(started_instances) > 0:
+                    msg = ""
+                    for si in started_instances:
+                        msg = msg + si["instance_id"] + "\n"
+                    self.response.set_display([{"WARN": "Repeat the boot instance " + "\n" + msg}])
+                    return WARN
+                self.response.set_display([{"Info: ": deploy_name + " instance all started"}])
+                return SUCCESS
+            elif ctl == "stop":
+                hm = HostsModule()
+                ssh_conn = Connector()
+                started_instances = dm.get_started_instance_info(deploy_name)
+                # 轮询关闭实例进程
+                for instance in started_instances:
+                    sid = instance["instance_id"]
+                    gh = dm.get_instance_group_and_host(sid)
+                    if gh is None:
+                        continue
+                    host = hm.get_host_info(gh["group"], gh["host"])
+                    l = [host]
+                    pool = ssh_conn.get_ssh_pool_by_hosts(l)
+                    pid = instance["instance_pid"]
+                    _stop_instance(pool, pid)
+                logger.info("stop instance all")
+            else:
+                logger.warning("control cmd " + ctl + " not found")
+        else:
+            if ctl == "start":
+                gh = dm.get_instance_group_and_host(instance_id)
+                if gh is None:
+                    self.response.set_display([{"WARN: ": "not found instance"}])
+                    return WARN
+                ins_pid = dm.get_instance_pid(instance_id)
+                if ins_pid is not None:
+                    self.response.set_display([{"WARN: ": "The instnace pid exist, can't start"}])
+                    return WARN
+                hm = HostsModule()
+                host = hm.get_host_info(gh["group"], gh["host"])
+                l = [host]
+                ssh_conn = Connector()
+                pool = ssh_conn.get_ssh_pool_by_hosts(l)
+                s, f = _start_instance(pool, deploy_path)
+                if len(f) > 0:
+                    self.response.set_display([{"failure": "start instance failure, could not connect to host"}])
+                    return FAILED
+                logger.info("start instance + " + instance_id)
+                self.response.set_display([{"Info: ": "instance " + instance_id + " started"}])
+                return SUCCESS
+            elif ctl == "stop":
+                gh = dm.get_instance_group_and_host(instance_id)
+                if gh is None:
+                    self.response.set_display([{"WARN: ": "not found instance"}])
+                    return WARN
+                hm = HostsModule()
+                host = hm.get_host_info(gh["group"], gh["host"])
+                l = [host]
+                ssh_conn = Connector()
+                pool = ssh_conn.get_ssh_pool_by_hosts(l)
+                instance_pid = dm.get_instance_pid(instance_id)
+                if instance_pid is None:
+                    self.response.set_display([{"WARN: ": "The instance not found pid, may be have been stopped"}])
+                    return WARN
+                s, f = _stop_instance(pool, instance_pid)
+                if len(f) > 0:
+                    self.response.set_display([{"failure": "stop instance failure, could not connect to host"}])
+                    return FAILED
+                logger.info("stop instance + " + instance_id)
+            else:
+                logger.warning("control cmd " + ctl + " not found")
 
     def delete(self, instruction):
         pass
+
+
+def _start_instance(pool, path):
+    app_dir = os.path.dirname(path)
+    log = app_dir + LINUX_SEP + "app.log"
+    start_cmd = "java -jar " + path + " > " + log + " 2>&1 &"
+    ssh_handler = RemoteHandler()
+    s, f = ssh_handler.remote_shell(pool, start_cmd)
+    return s, f
+
+
+def _stop_instance(pool, pid):
+    stop_cmd = "kill -9 " + str(pid)
+    ssh_handler = RemoteHandler()
+    s, f = ssh_handler.remote_shell(pool, stop_cmd)
+    return s, f

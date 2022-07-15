@@ -4,6 +4,8 @@ from abc import abstractmethod, ABC
 from src.ump.utils.logger import logger
 from src.ump.msg.module import Response
 
+module_names = ["deploy", "release", "hosts", "instance", "monitor"]
+
 
 # 模块抽象父类
 class ActionBase(ABC):

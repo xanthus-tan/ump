@@ -32,6 +32,8 @@ service模块
   ump-cli.py --module instance --action get --deploy-name demo-deploy
   ump-cli.py --module instance --action set --deploy-name demo-deploy --control start
   ump-cli.py --module instance --action set --deploy-name demo-deploy --control stop
+  ump-cli.py --module instance --action set --deploy-name demo-deploy --insid 70ff911003e511ed80aba4fc7733a40c --control start
+  ump-cli.py --module instance --action set --deploy-name demo-deploy --insid 70ff911003e511ed80aba4fc7733a40c --control stop
 """
 import json
 import optparse
@@ -41,7 +43,7 @@ import requests
 from prettytable import PrettyTable
 
 # *******************版本*******************
-UMP_CLI_VERSION = "1.1"
+UMP_CLI_VERSION = "2.1"
 # *****************************************
 HOST = socket.gethostname()
 BUFFER_SIZE = 1024 * 8
@@ -168,17 +170,21 @@ def command_format():
                              help="")
     parser.add_option_group(release_group)
 
-    # ump deploy moudle
-    service_group = optparse.OptionGroup(parser, "instance module")
-    service_group.add_option("", "--deploy-name",
+    # ump instance moudle
+    instance_group = optparse.OptionGroup(parser, "instance module")
+    instance_group.add_option("", "--deploy-name",
                              dest="deploy-name",
                              type="string",
                              help="deploy name")
-    service_group.add_option("", "--control",
+    instance_group.add_option("", "--control",
                              dest="control",
                              type="string",
                              help="app start command")
-    parser.add_option_group(service_group)
+    instance_group.add_option("", "--insid",
+                             dest="insid",
+                             type="string",
+                             help="instance id")
+    parser.add_option_group(instance_group)
     return parser
 
 

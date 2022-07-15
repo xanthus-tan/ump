@@ -17,24 +17,19 @@ class Connector:
     def get_ssh_pool(self, group):
         hostsMeta = HostsMetaInstance()
         hosts = hostsMeta.get_host_online_info(group)
-        self.ssh_pool = self.get_ssh_list(hosts)
+        self.get_ssh_pool_by_hosts(hosts)
         return self.ssh_pool
 
-    def get_ssh_list(self, hosts: []):
-        ssh_list = []
+    def get_ssh_pool_by_hosts(self, hosts: []):
         for h in hosts:
             ssh = SSH(h["addr"], h["port"], h["username"], h["password"])
-            ssh_list.append(ssh)
-        return ssh_list
-
-    def close_ssh_connect(self):
-        for ssh in self.ssh_pool:
-            ssh.ssh_client.close()
+            self.ssh_pool.append(ssh)
+        return self.ssh_pool
 
 
 # 远程执行命令
 class RemoteHandler:
-    def __init__(self, timeout=2):
+    def __init__(self, timeout=1):
         self.timeout = timeout
 
     # 执行SSH远程命令
@@ -52,15 +47,19 @@ class RemoteHandler:
                      }
                 success.append(j)
                 logger.debug("Host " + ssh.get_address() + " is running " + cmd)
+                ssh.ssh_client.close()
             except SSHException:
                 logger.error(ssh.get_address() + "'s ssh session not active")
                 failed.append(ssh.get_address())
+                ssh.ssh_client.close()
             except AttributeError:
                 logger.error(ssh.get_address() + "'not open_session, cause by object has no attribute open_session")
                 failed.append(ssh.get_address())
+                ssh.ssh_client.close()
             except socket.timeout:
                 logger.error(ssh.get_address() + "'s ssh connect time out")
                 failed.append(ssh.get_address())
+                ssh.ssh_client.close()
                 continue
         return success, failed
 
@@ -74,13 +73,16 @@ class RemoteHandler:
                 sftp = SFTP(ssh_connect)
                 sftp.put_file(src, des)
                 success.append(ssh.get_address())
+                ssh.ssh_client.close()
             except FileNotFoundError as error:
                 logger.error(ssh.get_address() + " 可能是权限问题无法访问或者没有该路径 " + error.__str__())
                 failed.append(ssh.get_address())
+                ssh.ssh_client.close()
             except socket.timeout as error:
                 logger.error(error.__str__() + " in " + ssh.get_address())
                 logger.error(ssh.get_address() + " 无法远程连接,请检查主机！")
                 failed.append(ssh.get_address())
+                ssh.ssh_client.close()
         return success, failed
 
 

@@ -14,6 +14,13 @@ class HostsMeta(ABC):
 
 
 class DeployMeta(ABC):
+    @abstractmethod
+    def get_instance_group_and_host(self, instance_id):
+        pass
+
+    @abstractmethod
+    def get_deploy_group(self, deploy_name):
+        pass
 
     @abstractmethod
     def get_deploy_success_hosts(self, deploy_name) -> []:
@@ -22,3 +29,21 @@ class DeployMeta(ABC):
     @abstractmethod
     def get_deploy_success_hosts_info(self, deploy_name) -> []:
         return []
+
+    @abstractmethod
+    def get_deploy_path(self, deploy_name):
+        pass
+
+    @abstractmethod
+    def get_deploy_id(self, deploy_name):
+        pass
+
+
+class DeployInstanceMeta(ABC):
+    @abstractmethod
+    def get_deploy_instance_pid(self, instance_id):
+        pass
+
+    @abstractmethod
+    def get_deploy_started_instance(self, deploy_name):
+        pass

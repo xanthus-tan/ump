@@ -2,9 +2,8 @@
 
 import os
 import yaml
-
 from src.ump.modules.hosts.meta import HostsMetaInstance
-from src.ump.modules.deploy.meta import DeployMeataInstance
+from src.ump.modules.deploy.meta import DeployMetaInstance, DeployInstanceMetaInstance
 from src.ump.modules.release.meta import ReleaseMetaInstance
 from src.ump.metadata import module_path
 
@@ -48,10 +47,30 @@ class ReleaseModule:
 
 class DeployModule:
     def __init__(self):
-        self.meta = DeployMeataInstance()
+        self.deploy_meta = DeployMetaInstance()
+        self.instance_meta = DeployInstanceMetaInstance()
 
     def get_deploy_success_hosts(self, deploy_name) -> []:
-        return self.meta.get_deploy_success_hosts(deploy_name)
+        return self.deploy_meta.get_deploy_success_hosts(deploy_name)
+
+    def get_deploy_group(self, deploy_name):
+        return self.deploy_meta.get_deploy_group(deploy_name)
 
     def get_deploy_success_hosts_info(self, deploy_name) -> []:
-        return self.meta.get_deploy_success_hosts_info(deploy_name)
+        return self.deploy_meta.get_deploy_success_hosts_info(deploy_name)
+
+    def get_deploy_path(self, deploy_name):
+        return self.deploy_meta.get_deploy_path(deploy_name)
+
+    def get_instance_group_and_host(self, instance_id):
+        return self.deploy_meta.get_instance_group_and_host(instance_id)
+
+    def get_instance_pid(self, instance_id):
+        return self.instance_meta.get_deploy_instance_pid(instance_id)
+
+    def get_started_instance_info(self, deploy_name):
+        return self.instance_meta.get_deploy_started_instance(deploy_name)
+
+
+
+

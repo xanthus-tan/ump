@@ -5,7 +5,7 @@ module:
   args:
   - name: freq
     type: string
-    default: 3
+    default: 7
     describe: 监控频率参数
   - name: jobid
     type: string

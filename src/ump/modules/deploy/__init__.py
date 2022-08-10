@@ -17,34 +17,34 @@ from src.ump.utils import get_current_local_datetime, get_unique_id
 # deploy模块具体实现
 class Action(ActionBase, UmpJob):
     # 服务启动时, 该模块job自动加载
-    def job_boot(self, **args):
-        deploy_name = args["job_name"]
-        job_id = args["job_id"]
-        job_interval = args["job_interval"]
-        ssh_timeout = int(args["job_ssh_timeout"])
-        ds = DeployService()
-        deploy_info = ds.get_deploy_info(deploy_name)
-        if deploy_info is None:
-            return None
-        deploy_obj = deploy_info[0]
-        instances = ds.get_deploy_instance_info(deploy_name)
+    def job_boot(self, jobs):
         ihc = get_instance_health_check_cache()
-        ihc[deploy_name] = {}
-        for instance in instances:
-            ihc[deploy_name][instance["instance_host"]] = {
-                "instance_id": instance["instance_id"],
-                "instance_status": instance["instance_status"]
-            }
-        job = Job()
-        job.set_job_id(job_id)
-        job.set_job_interval(job_interval)
-        ssh_conn = Connector()
-        group_name = deploy_obj["deploy_group"]
-        file_name = deploy_obj["deploy_path"]
-        ssh_conn_poll = ssh_conn.get_ssh_pool(group_name)
-        job.set_job_func(_health_check, [ssh_conn_poll, ssh_timeout, basename(file_name), deploy_name])
-        job.job_start()
-        logger.info("start health check")
+        ds = DeployService()
+        for job in jobs:
+            deploy_name = job["job_target_name"]
+            job_id = job["job_id"]
+            job_interval = job["job_interval"]
+            ssh_timeout = int(job["job_ssh_timeout"])
+            deploy_info = ds.get_deploy_info(deploy_name)
+            if deploy_info is None:
+                continue
+            deploy_obj = deploy_info[0]
+            instances = ds.get_deploy_instance_info(deploy_name)
+            ihc[deploy_name] = {}
+            for instance in instances:
+                ihc[deploy_name][instance["instance_host"]] = {
+                    "instance_id": instance["instance_id"],
+                    "instance_status": instance["instance_status"]
+                }
+            job = Job()
+            job.set_job_id(job_id)
+            job.set_job_interval(job_interval)
+            ssh_conn = Connector()
+            group_name = deploy_obj["deploy_group"]
+            file_name = deploy_obj["deploy_path"]
+            ssh_conn_poll = ssh_conn.get_ssh_pool(group_name)
+            job.set_job_func(_health_check, [ssh_conn_poll, ssh_timeout, basename(file_name), deploy_name])
+            job.job_start()
         ds.close_db_connection()
 
     def get(self, instruction):
@@ -125,6 +125,7 @@ class Action(ActionBase, UmpJob):
                                                          deploy_name=deploy_name,
                                                          deploy_path=deploy_target,
                                                          deploy_app=app,
+                                                         deploy_startup_args=instruction["args"],
                                                          success_hosts=success_hosts,
                                                          failure_hosts=failure_hosts,
                                                          deploy_comment=self.comment)
@@ -189,6 +190,13 @@ def _health_check(ssh_pool, ssh_timeout, clue, deploy_name):
     ds = DeployService()
     ihc = get_instance_health_check_cache()
     current_deploy_check_cache = ihc[deploy_name]
+    for f in failure:
+        host = f
+        status = current_deploy_check_cache[host]["instance_status"]
+        if status == INSTANCE_START:
+            sid = current_deploy_check_cache[host]["instance_id"]
+            current_deploy_check_cache[host]["instance_status"] = INSTANCE_STOP
+            ds.update_instance(sid, None, INSTANCE_STOP, stop_time=get_current_local_datetime())
     for m in success:
         out = m["out"]
         host = m["host"]
@@ -209,4 +217,4 @@ def _health_check(ssh_pool, ssh_timeout, clue, deploy_name):
                 pid = out.split()[0]
                 ds.update_instance(sid, pid, INSTANCE_START, start_time=get_current_local_datetime())
     ds.close_db_connection()
-    logger.debug(ihc)
+    logger.debug(deploy_name + " health check, instance status: " + str(current_deploy_check_cache))

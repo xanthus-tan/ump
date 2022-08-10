@@ -19,6 +19,7 @@ class UmpDeployInfo(Base):
     deploy_app = Column(String(40))
     deploy_app_last = Column(String(40))
     deploy_group = Column(String(20))
+    deploy_startup_args = Column(String(50))
     deploy_host_num = Column(Integer)
     deploy_failure_num = Column(Integer)
     deploy_comment = Column(String(100))

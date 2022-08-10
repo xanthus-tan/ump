@@ -2,7 +2,7 @@
 import os
 
 from src.ump.exector.remote import Connector, RemoteHandler
-from src.ump.metadata import LINUX_SEP
+from src.ump.utils import LINUX_SEP
 from src.ump.metadata.module import DeployModule, HostsModule
 from src.ump.modules import ActionBase
 from src.ump.msg import SUCCESS, FAILED, WARN
@@ -31,14 +31,16 @@ class Action(ActionBase):
         instance_id = instruction["insid"]
         ctl = instruction["control"]
         dm = DeployModule()
-        deploy_path = dm.get_deploy_path(deploy_name)
+        deploy = dm.get_current_deploy_info(deploy_name)
+        deploy_path = deploy["deploy_path"]
+        startup_args = deploy["deploy_startup_args"]
         if instance_id is None or instance_id == "":
             if ctl == "start":
                 started_instances = dm.get_started_instance_info(deploy_name)
                 group_name = dm.get_deploy_group(deploy_name)
                 ssh_conn = Connector()
                 ssh_pool = ssh_conn.get_ssh_pool(group_name)
-                s, f = _start_instance(ssh_pool, deploy_path)
+                s, f = _start_instance(ssh_pool, deploy_path, startup_args)
                 if len(f) == len(ssh_pool):
                     self.response.set_display([{"failure": "start instance failure, could not connect to host"}])
                     return FAILED
@@ -84,7 +86,7 @@ class Action(ActionBase):
                 l = [host]
                 ssh_conn = Connector()
                 pool = ssh_conn.get_ssh_pool_by_hosts(l)
-                s, f = _start_instance(pool, deploy_path)
+                s, f = _start_instance(pool, deploy_path, startup_args)
                 if len(f) > 0:
                     self.response.set_display([{"failure": "start instance failure, could not connect to host"}])
                     return FAILED
@@ -117,10 +119,14 @@ class Action(ActionBase):
         pass
 
 
-def _start_instance(pool, path):
+def _start_instance(pool, path, args):
     app_dir = os.path.dirname(path)
     log = app_dir + LINUX_SEP + "app.log"
-    start_cmd = "java -jar " + path + " > " + log + " 2>&1 &"
+    if args is None:
+        start_cmd = "java -jar " + path + " > " + log + " 2>&1 &"
+    else:
+        start_cmd = "java -jar " + path + " " + args + " > " + log + " 2>&1 &"
+    logger.debug("command is :" + start_cmd)
     ssh_handler = RemoteHandler()
     s, f = ssh_handler.remote_shell(pool, start_cmd)
     return s, f
@@ -130,4 +136,5 @@ def _stop_instance(pool, pid):
     stop_cmd = "kill -9 " + str(pid)
     ssh_handler = RemoteHandler()
     s, f = ssh_handler.remote_shell(pool, stop_cmd)
+    logger.debug("command is :" + stop_cmd)
     return s, f

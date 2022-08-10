@@ -6,6 +6,7 @@ from src.ump.modules.hosts.meta import HostsMetaInstance
 from src.ump.modules.deploy.meta import DeployMetaInstance, DeployInstanceMetaInstance
 from src.ump.modules.release.meta import ReleaseMetaInstance
 from src.ump.metadata import module_path
+from src.ump.utils import LINUX_SEP
 
 
 class Module:
@@ -71,6 +72,21 @@ class DeployModule:
     def get_started_instance_info(self, deploy_name):
         return self.instance_meta.get_deploy_started_instance(deploy_name)
 
+    def get_current_deploy_info(self, deploy_name):
+        return self.deploy_meta.get_deploy_info(deploy_name)
 
+    def get_app_info(self, instance_id):
+        return self.instance_meta.get_deploy_instance_info(instance_id)
 
+    def get_app_path(self, instance_id):
+        instance_info = self.get_app_info(instance_id)
+        app_path = instance_info["app_path"]
+        return app_path
+
+    def get_app_log_path(self, instance_id):
+        app_path = self.get_app_path(instance_id)
+        basedir = os.path.dirname(app_path)
+        log_name = "app.log"
+        log_path = basedir + LINUX_SEP + log_name
+        return log_path
 

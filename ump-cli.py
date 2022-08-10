@@ -32,8 +32,10 @@ service模块
   ump-cli.py --module instance --action get --deploy-name demo-deploy
   ump-cli.py --module instance --action set --deploy-name demo-deploy --control start
   ump-cli.py --module instance --action set --deploy-name demo-deploy --control stop
-  ump-cli.py --module instance --action set --deploy-name demo-deploy --insid 70ff911003e511ed80aba4fc7733a40c --control start
+  ump-cli.py --module instance --action set --deploy-name demo-deploy2 --insid fe7ff01b117411edbb69a4fc7733a40c --control start
   ump-cli.py --module instance --action set --deploy-name demo-deploy --insid 70ff911003e511ed80aba4fc7733a40c --control stop
+logs模块
+  ump-cli.py --module logs --action get --insid fe7ff01b117411edbb69a4fc7733a40c
 """
 import json
 import optparse
@@ -43,7 +45,7 @@ import requests
 from prettytable import PrettyTable
 
 # *******************版本*******************
-UMP_CLI_VERSION = "2.2"
+UMP_CLI_VERSION = "2.3"
 # *****************************************
 HOST = "127.0.0.1"
 BUFFER_SIZE = 1024 * 8
@@ -73,6 +75,10 @@ def command_format():
                       dest="comment",
                       type="string",
                       help="operate comment")
+    parser.add_option("", "--insid",
+                      dest="insid",
+                      type="string",
+                      help="实例名称")
     # monitor monitor moudle
     monitor_group = optparse.OptionGroup(parser, "monitor module")
     monitor_group.add_option("", "--freq",
@@ -140,6 +146,10 @@ def command_format():
                             dest="health",
                             type="string",
                             help="")
+    deploy_group.add_option("", "--args",
+                            dest="args",
+                            type="string",
+                            help="")
     parser.add_option_group(deploy_group)
 
     # ump release moudle
@@ -180,11 +190,15 @@ def command_format():
                              dest="control",
                              type="string",
                              help="app start command")
-    instance_group.add_option("", "--insid",
-                             dest="insid",
-                             type="string",
-                             help="instance id")
+    # instance_group.add_option("", "--insid",
+    #                          dest="insid",
+    #                          type="string",
+    #                          help="实例id")
     parser.add_option_group(instance_group)
+
+    # ump instance moudle
+    logs_group = optparse.OptionGroup(parser, "logs module")
+    parser.add_option_group(logs_group)
     return parser
 
 

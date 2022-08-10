@@ -47,6 +47,9 @@ class Action(ActionBase):
                 self.response.set_display(display)
                 return WARN
             v = display_metrics(metrics, failed_hosts)
+            if v is None:
+                self.response.set_display([{"error": "can not fetch metrics"}])
+                return FAILED
             display = v
             self.response.set_display(display)
             return SUCCESS
@@ -186,7 +189,11 @@ def display_metrics(metrics, failed_hosts):
             logger.error("to json info error, from monitor module")
             logger.error("json error" + str(error))
         row = {"host": m["host"]}
-        cpu = host_metrics["cpu"]
+        try:
+            cpu = host_metrics["cpu"]
+        except KeyError as error:
+            logger.error("keyerror, not found key cpu")
+            return None
         cpu_display = "core:" + str(cpu["CpuCount"]) + " " + \
                       "used:" + str(round(cpu["CpuPercent"], 2)) + "%"
         row["cpu"] = cpu_display

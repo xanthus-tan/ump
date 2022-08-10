@@ -23,3 +23,7 @@ module:
     type: boolean
     default: true
     describe: 健康检测开关
+  - name: args
+    type: string
+    default:
+    describe: 部署启动参数

@@ -11,6 +11,7 @@ module_names = ["deploy", "release", "hosts", "instance", "monitor"]
 class ActionBase(ABC):
 
     def __init__(self):
+        self.insid = ""
         self.config = None
         self.action = ""
         self.group = ""

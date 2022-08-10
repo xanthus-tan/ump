@@ -4,6 +4,8 @@ import time
 import uuid
 from datetime import datetime
 
+LINUX_SEP = "/"
+
 
 # 获取当前时间datetime类型, 数据库插入时会用到
 def get_current_local_datetime():

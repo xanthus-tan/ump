@@ -38,6 +38,10 @@ class DeployMeta(ABC):
     def get_deploy_id(self, deploy_name):
         pass
 
+    @abstractmethod
+    def get_deploy_info(self, deploy_name):
+        pass
+
 
 class DeployInstanceMeta(ABC):
     @abstractmethod
@@ -46,4 +50,8 @@ class DeployInstanceMeta(ABC):
 
     @abstractmethod
     def get_deploy_started_instance(self, deploy_name):
+        pass
+
+    @abstractmethod
+    def get_deploy_instance_info(self, instance_id):
         pass

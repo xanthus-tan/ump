@@ -71,7 +71,7 @@ ump内置的版本库，本地工程包上传到内置仓库中，并且打上�
   ump-cli.py --module monitor --action get --group g1 --type status
   查看ump目前运行的监控任务
   
-  ump-cli.py --module monitor --action get --group g1 --type metrics
+  ump-cli.py --module monitor --action get --group g1 --type metrics --cpath /home/xanthus/ump/collector
   查看组g1下所有节点的当前性能数据
   
   ump-cli.py --module monitor --action get --group g1 --cpath /home/xanthus/collector --type metrics
@@ -98,6 +98,9 @@ ump内置的版本库，本地工程包上传到内置仓库中，并且打上�
 ```
   ump-cli.py --module deploy --action set --group g1 --name demo-deploy --app demo-app:1.0 --dest /tmp/
   创建一个部署，名称为demo-deploy。同时向组g1部署称为demo-app标签为1.0的app。节点路径为/tmp
+  
+  ump-cli.py --module deploy --action set --group g1 --name demo-deploy --app demo-app:1.0 --dest /tmp/ --args "-Xms512m -Xmx512m"
+  创建一个部署，名称为demo-deploy。同时向组g1部署称为demo-app标签为1.0的app。节点路径为/tmp，参数为-Xms512m -Xmx512m
   
   ump-cli.py --module deploy --action get --name demo-deploy
   查看部署名称为demo-deploy的部署信息

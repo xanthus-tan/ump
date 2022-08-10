@@ -1,0 +1,9 @@
+---
+module:
+  name: logs
+  version: 1.0
+  args:
+  - name: insid
+    type: string
+    default:
+    describe: 实例id

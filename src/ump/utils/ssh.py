@@ -19,7 +19,7 @@ class SSH:
         self.pwd = pwd
 
     # 连接远程服务器
-    def connect_server(self, timeout=2):
+    def connect_server(self, timeout=1):
         # create ssh client
         self.ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.ssh_client = self._connect(timeout)

@@ -27,6 +27,15 @@ class DeployMetaInstance(DeployMeta):
         ds.close_db_connection()
         return deploy["deploy_id"]
 
+    def get_deploy_info(self, deploy_name):
+        ds = DeployService()
+        deploy_info = ds.get_deploy_info(deploy_name)
+        if deploy_info is None:
+            return None
+        deploy = deploy_info[0]
+        ds.close_db_connection()
+        return deploy
+
     def get_deploy_group(self, deploy_name):
         db = DB()
         conn = db.get_connect()
@@ -102,6 +111,21 @@ class DeployMetaInstance(DeployMeta):
 
 class DeployInstanceMetaInstance(DeployInstanceMeta):
 
+    def get_deploy_instance_info(self, instance_id):
+        db = DB()
+        db_conn = db.get_connect()
+        s = select(UmpDeployInfo, UmpDeployInstanceInfo)\
+            .where(UmpDeployInstanceInfo.instance_id == instance_id,
+                   UmpDeployInfo.deploy_id == UmpDeployInstanceInfo.deploy_id,
+                   UmpDeployInfo.deploy_status == DEPLOY_CURRENT)
+        r = db_conn.execute(s).fetchone()
+        app_info = {
+            "app_path": r["deploy_path"],
+            "app_pid": r["instance_pid"],
+            "instance_status": r["instance_status"]
+        }
+        return app_info
+
     def get_deploy_instance_pid(self, instance_id):
         db = DB()
         db_conn = db.get_connect()
@@ -160,6 +184,7 @@ class DeployService:
                     "deploy_app": r.deploy_app,
                     "deploy_app_last": r.deploy_app_last,
                     "deploy_group": r.deploy_group,
+                    "deploy_startup_args": r.deploy_startup_args,
                     "host_num": r.deploy_host_num,
                     "failed_num": r.deploy_failure_num,
                     "deploy_status": r.deploy_status,
@@ -179,6 +204,7 @@ class DeployService:
                 "deploy_app": rs["deploy_app"],
                 "deploy_app_last": rs["deploy_app_last"],
                 "deploy_group": rs["deploy_group"],
+                "deploy_startup_args": rs["deploy_startup_args"],
                 "host_num": rs["deploy_host_num"],
                 "failure_num": rs["deploy_failure_num"],
                 "deploy_status": rs["deploy_status"],
@@ -193,6 +219,7 @@ class DeployService:
                           deploy_path=None,
                           deploy_app=None,
                           deploy_group=None,
+                          deploy_startup_args=None,
                           deploy_comment=None,
                           success_hosts=None,
                           failure_hosts=None
@@ -211,6 +238,7 @@ class DeployService:
                 "deploy_path": deploy_path,
                 "deploy_app": deploy_app,
                 "deploy_group": deploy_group,
+                "deploy_startup_args": deploy_startup_args,
                 "deploy_app_last": prev_deploy_app,
                 "deploy_host_num": len(success_hosts) + len(failure_hosts),
                 "deploy_failure_num": len(failure_hosts),

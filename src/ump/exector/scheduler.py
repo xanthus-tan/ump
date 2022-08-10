@@ -17,30 +17,27 @@ START = "start"
 
 
 def job_startup():
-    db_conn = DB().get_connect()
-    s = select(JobModel).where(JobModel.job_status == START)
-    rs = db_conn.execute(s)
-    job_count = 0
-    for r in rs:
-        job_count += 0
-        job_type = r["job_type"]
-        if job_type in module_names:
-            job_name = r["job_target_name"]
-            job_id = r["job_id"]
-            job_interval = r["job_interval"]
-            job_ssh_timeout = r["job_ssh_timeout"]
-            try:
-                module_class = "Action"
-                my_handler = getattr(
-                    __import__("src.ump.modules.{0}".format(job_type), fromlist=[module_class]), module_class)
-                module = my_handler()
-                module.job_boot(job_name=job_name, job_id=job_id, job_interval=job_interval, job_ssh_timeout=job_ssh_timeout)
-            except ModuleNotFoundError as error:
-                logger.error("job boot error: module error")
-                logger.error(error)
-    if job_count == 0:
-        logger.info("Not found exist job")
-    db_conn.close()
+    jds = JobDBService()
+    types = jds.get_job_type()
+    if len(types) == 0:
+        logger.info("Not found running job")
+        return
+    for job_type in types:
+        if job_type not in module_names:
+            logger.error("not found module" + job_type)
+            continue
+        try:
+            module_class = "Action"
+            my_handler = getattr(__import__("src.ump.modules.{0}".format(job_type), fromlist=[module_class]), module_class)
+            module = my_handler()
+            jobs = jds.get_started_jobs_by_type(job_type)
+            jds.close_job_db_connection()
+            module.job_boot(jobs)
+        except ModuleNotFoundError as error:
+            logger.error("job boot error: module error")
+            logger.error(error)
+            jds.close_job_db_connection()
+    jds.close_job_db_connection()
 
 
 class UmpJob(ABC):
@@ -122,6 +119,19 @@ class JobDBService:
         job_id = rs["job_id"]
         return job_id
 
+    def get_started_jobs_by_type(self, job_type):
+        s = select(JobModel).where(JobModel.job_type == job_type, JobModel.job_status == START)
+        jobs = []
+        rs = self.conn.execute(s)
+        for r in rs:
+            jobs.append({
+                "job_id": r["job_id"],
+                "job_target_name": r["job_target_name"],
+                "job_interval": r["job_interval"],
+                "job_ssh_timeout": r["job_ssh_timeout"]
+            })
+        return jobs
+
     def delete_job_by_target(self, target_name, target_type):
         job_id = self.get_job_id_by_target(target_name, target_type)
         if job_id is None:
@@ -131,6 +141,15 @@ class JobDBService:
         s = delete(JobModel).where(JobModel.job_target_name == target_name,
                                    JobModel.job_type == target_type)
         self.conn.execute(s)
+
+    def get_job_type(self):
+        s = select(JobModel.job_type).where(JobModel.job_status == START).group_by(JobModel.job_type)
+        rs = self.conn.execute(s)
+        types = []
+        for r in rs:
+            job_type = r["job_type"]
+            types.append(job_type)
+        return types
 
     def delete_job_by_job_id(self, job_id):
         pass
